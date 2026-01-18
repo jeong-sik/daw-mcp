@@ -68,6 +68,41 @@ The dream: real-time sound design feedback without leaving the terminal.
 | Natural language sound design | ❌ TODO |
 | Audio stream analysis | ❌ TODO |
 
+## MCP Tools
+
+All tools exist as code but most are untested.
+
+| Tool | Description | Status |
+|------|-------------|--------|
+| `daw_detect` | Detect running DAWs, connect | 🚧 |
+| `daw_transport` | play, stop, record, pause, rewind | 🚧 |
+| `daw_tempo` | Get/set BPM | 🚧 |
+| `daw_select_track` | Select track by index/name | 🚧 |
+| `daw_mixer` | Volume, pan, mute, solo, arm | 🚧 |
+| `daw_tracks` | List all tracks | 🚧 |
+| `daw_automation_read` | Read automation data | 🚧 |
+| `daw_automation_write` | Write automation points | 🚧 |
+| `daw_automation_mode` | Set automation mode | 🚧 |
+| `daw_plugin_param` | Get/set plugin parameters | 🚧 |
+| `daw_markers` | Manage markers/regions | 🚧 |
+| `daw_routing` | Track routing and sends | 🚧 |
+| `daw_render` | Bounce/render project | 🚧 |
+| `daw_meter` | Audio level metering | 🚧 mock |
+| `daw_meter_stream` | Real-time meter SSE stream | 🚧 mock |
+| `daw_settings` | Audio settings (sample rate, buffer) | 🚧 |
+| `daw_status` | Connection status | 🚧 |
+
+### Example Use Cases (Untested)
+
+```
+"템포 120으로"        → daw_tempo(bpm: 120)
+"녹음 시작"           → daw_transport(action: "record")
+"보컬 트랙 -3dB"      → daw_mixer(track: 1, volume: -3)
+"기타 왼쪽으로 팬"    → daw_mixer(track: 2, pan: -50)
+"여기 마커 찍어"      → daw_markers(action: "add", name: "Hook")
+"이 구간 10번 반복"   → daw_markers + daw_transport (loop)
+```
+
 ## Requirements
 
 - OCaml 5.2+
