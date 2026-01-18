@@ -23,3 +23,9 @@ daw-mcp-macos-arm64
 daw-mcp-linux-x64
 # Track the local release artifact
 !daw-mcp-macos-arm64
+
+# Worktrees
+.worktrees/
+
+# Xcode build
+xcode/build/
