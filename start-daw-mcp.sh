@@ -39,7 +39,7 @@ done
 
 # Run
 if [ "$MODE" = "http" ]; then
-    PORT="${PORT:-8934}"
+    PORT="${PORT:-8950}"
     echo "Starting DAW MCP in HTTP mode on port $PORT..."
     exec dune exec daw-mcp -- --port "$PORT" $VERBOSE
 else
