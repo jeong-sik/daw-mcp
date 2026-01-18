@@ -1,0 +1,4 @@
+# Built plugins
+*.clap
+*.component/
+DAWBridge.component/

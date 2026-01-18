@@ -1,0 +1,10 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/dancer/me/.worktrees/daw-mcp-init/features/daw-mcp/xcode/build/Build/Products/Release/DAW Bridge.app/Contents/MacOS/DAW Bridge'
+relocations:
+  - { offset: 0xEF250, size: 0x8, addend: 0x0, symName: '-[AppDelegate applicationDidFinishLaunching:]', symObjAddr: 0x0, symBinAddr: 0x1000009F8, symSize: 0x1C }
+  - { offset: 0xEF270, size: 0x8, addend: 0x0, symName: '-[AppDelegate applicationDidFinishLaunching:]', symObjAddr: 0x0, symBinAddr: 0x1000009F8, symSize: 0x1C }
+  - { offset: 0xEF2CE, size: 0x8, addend: 0x0, symName: '-[AppDelegate applicationShouldTerminateAfterLastWindowClosed:]', symObjAddr: 0x1C, symBinAddr: 0x100000A14, symSize: 0x8 }
+  - { offset: 0xEF369, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100000A1C, symSize: 0x4C }
+  - { offset: 0xEF377, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100000A1C, symSize: 0x4C }
+...

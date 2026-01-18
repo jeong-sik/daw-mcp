@@ -1,0 +1,31 @@
+(test
+ (name test_osc)
+ (libraries daw_mcp.osc alcotest))
+
+(test
+ (name test_mcp)
+ (libraries daw_mcp alcotest yojson))
+
+(test
+ (name test_applescript)
+ (libraries daw_mcp.transport alcotest))
+
+(test
+ (name test_bridge)
+ (libraries daw_mcp.bridge alcotest))
+
+(test
+ (name test_integration)
+ (libraries daw_mcp daw_mcp.integration eio_main alcotest yojson))
+
+(test
+ (name test_metering)
+ (libraries daw_mcp.metering alcotest yojson))
+
+(test
+ (name test_sse)
+ (libraries daw_mcp.sse daw_mcp.metering eio_main alcotest yojson str))
+
+(test
+ (name test_automation)
+ (libraries daw_mcp.automation alcotest yojson))

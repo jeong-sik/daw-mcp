@@ -1,0 +1,4 @@
+(library
+ (name transport)
+ (public_name daw_mcp.transport)
+ (libraries unix logs))

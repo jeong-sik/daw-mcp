@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'DAWBridge' in project 'DAWBridge'
+➜ Explicit dependency on target 'DAWBridgeAU' in project 'DAWBridge'
+Target 'DAWBridgeAU' in project 'DAWBridge' (no dependencies)

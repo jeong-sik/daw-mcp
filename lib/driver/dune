@@ -1,0 +1,4 @@
+(library
+ (name daw_driver)
+ (public_name daw_mcp.driver)
+ (libraries eio logs))

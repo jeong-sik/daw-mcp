@@ -1,0 +1,91 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/dancer/me/.worktrees/daw-mcp-init/features/daw-mcp/xcode/build/Build/Products/Release/DAWBridgeAU.appex/Contents/MacOS/DAWBridgeAU'
+relocations:
+  - { offset: 0x94, size: 0x8, addend: 0x0, symName: __ZN13MIDITransportL13g_initializedE, symObjAddr: 0x40520, symBinAddr: 0x10000D038, symSize: 0x0 }
+  - { offset: 0xB4, size: 0x8, addend: 0x0, symName: __ZN13MIDITransportL12g_midiClientE, symObjAddr: 0x40524, symBinAddr: 0x10000D03C, symSize: 0x0 }
+  - { offset: 0xCD, size: 0x8, addend: 0x0, symName: __ZN13MIDITransportL12g_midiSourceE, symObjAddr: 0x40528, symBinAddr: 0x10000D040, symSize: 0x0 }
+  - { offset: 0x14A, size: 0x8, addend: 0x0, symName: __ZN13MIDITransportL10initializeEv, symObjAddr: 0x728, symBinAddr: 0x1000016B0, symSize: 0xD0 }
+  - { offset: 0x1D0, size: 0x8, addend: 0x0, symName: __ZN13MIDITransportL8sendMIDIEPKhj, symObjAddr: 0x1B9C, symBinAddr: 0x100002B24, symSize: 0x90 }
+  - { offset: 0x57F7, size: 0x8, addend: 0x0, symName: __ZNSt3__120__throw_length_errorB8ne200100EPKc, symObjAddr: 0x1DB4, symBinAddr: 0x100002D3C, symSize: 0x50 }
+  - { offset: 0xBECF, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit initWithComponentDescription:options:error:]', symObjAddr: 0x0, symBinAddr: 0x100000F88, symSize: 0x284 }
+  - { offset: 0xC2FF, size: 0x8, addend: 0x0, symName: __ZNSt3__110shared_ptrI13RenderContextEaSB8ne200100EOS2_, symObjAddr: 0x284, symBinAddr: 0x10000120C, symSize: 0x5C }
+  - { offset: 0xC560, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit startEventDrainTimer]', symObjAddr: 0x2E0, symBinAddr: 0x100001268, symSize: 0x198 }
+  - { offset: 0xCB75, size: 0x8, addend: 0x0, symName: __ZN7JsonRpcL11makeRequestEPKcS1_, symObjAddr: 0x1C2C, symBinAddr: 0x100002BB4, symSize: 0xD0 }
+  - { offset: 0xD293, size: 0x8, addend: 0x0, symName: '___42-[DAWBridgeAudioUnit startEventDrainTimer]_block_invoke', symObjAddr: 0x478, symBinAddr: 0x100001400, symSize: 0x2B0 }
+  - { offset: 0xE000, size: 0x8, addend: 0x0, symName: __ZN6SocketL7sendAllEiRKNSt3__112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEE, symObjAddr: 0x7F8, symBinAddr: 0x100001780, symSize: 0x1CC }
+  - { offset: 0xEFB7, size: 0x8, addend: 0x0, symName: __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC2B8ne200100ILi0EEEPKc, symObjAddr: 0x1CFC, symBinAddr: 0x100002C84, symSize: 0xA4 }
+  - { offset: 0xF238, size: 0x8, addend: 0x0, symName: __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE20__throw_length_errorB8ne200100Ev, symObjAddr: 0x1DA0, symBinAddr: 0x100002D28, symSize: 0x14 }
+  - { offset: 0xF25E, size: 0x8, addend: 0x0, symName: ___copy_helper_block_ea8_32w40c41_ZTSNSt3__110shared_ptrI13RenderContextEE, symObjAddr: 0x9C4, symBinAddr: 0x10000194C, symSize: 0x44 }
+  - { offset: 0xF33A, size: 0x8, addend: 0x0, symName: ___destroy_helper_block_ea8_32w40c41_ZTSNSt3__110shared_ptrI13RenderContextEE, symObjAddr: 0xA08, symBinAddr: 0x100001990, symSize: 0x28 }
+  - { offset: 0xF37A, size: 0x8, addend: 0x0, symName: __ZNSt3__110shared_ptrI13RenderContextED2B8ne200100Ev, symObjAddr: 0x1E70, symBinAddr: 0x100002DF8, symSize: 0x50 }
+  - { offset: 0xF40B, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit stopEventDrainTimer]', symObjAddr: 0xA30, symBinAddr: 0x1000019B8, symSize: 0x44 }
+  - { offset: 0xF45A, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit connectToServer]', symObjAddr: 0xA74, symBinAddr: 0x1000019FC, symSize: 0x94 }
+  - { offset: 0xF972, size: 0x8, addend: 0x0, symName: '___37-[DAWBridgeAudioUnit connectToServer]_block_invoke', symObjAddr: 0xB08, symBinAddr: 0x100001A90, symSize: 0x390 }
+  - { offset: 0x11215, size: 0x8, addend: 0x0, symName: ___copy_helper_block_ea8_32w, symObjAddr: 0xE98, symBinAddr: 0x100001E20, symSize: 0xC }
+  - { offset: 0x1123E, size: 0x8, addend: 0x0, symName: ___destroy_helper_block_ea8_32w, symObjAddr: 0xEA4, symBinAddr: 0x100001E2C, symSize: 0x8 }
+  - { offset: 0x1125D, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit scheduleReconnect]', symObjAddr: 0xEAC, symBinAddr: 0x100001E34, symSize: 0x11C }
+  - { offset: 0x11315, size: 0x8, addend: 0x0, symName: '___39-[DAWBridgeAudioUnit scheduleReconnect]_block_invoke', symObjAddr: 0xFC8, symBinAddr: 0x100001F50, symSize: 0x80 }
+  - { offset: 0x1140E, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit cancelReconnectTimer]', symObjAddr: 0x1048, symBinAddr: 0x100001FD0, symSize: 0x44 }
+  - { offset: 0x1144F, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit dealloc]', symObjAddr: 0x108C, symBinAddr: 0x100002014, symSize: 0xE4 }
+  - { offset: 0x1155A, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit outputBusses]', symObjAddr: 0x1180, symBinAddr: 0x100002108, symSize: 0x10 }
+  - { offset: 0x11592, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit allocateRenderResourcesAndReturnError:]', symObjAddr: 0x1190, symBinAddr: 0x100002118, symSize: 0xC4 }
+  - { offset: 0x11606, size: 0x8, addend: 0x0, symName: '___60-[DAWBridgeAudioUnit allocateRenderResourcesAndReturnError:]_block_invoke', symObjAddr: 0x1254, symBinAddr: 0x1000021DC, symSize: 0xD8 }
+  - { offset: 0x11BA1, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit deallocateRenderResources]', symObjAddr: 0x132C, symBinAddr: 0x1000022B4, symSize: 0xD4 }
+  - { offset: 0x11BFF, size: 0x8, addend: 0x0, symName: '___47-[DAWBridgeAudioUnit deallocateRenderResources]_block_invoke', symObjAddr: 0x1400, symBinAddr: 0x100002388, symSize: 0xD8 }
+  - { offset: 0x1219A, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit internalRenderBlock]', symObjAddr: 0x14D8, symBinAddr: 0x100002460, symSize: 0xF4 }
+  - { offset: 0x12455, size: 0x8, addend: 0x0, symName: '___41-[DAWBridgeAudioUnit internalRenderBlock]_block_invoke', symObjAddr: 0x15CC, symBinAddr: 0x100002554, symSize: 0x10 }
+  - { offset: 0x124EE, size: 0x8, addend: 0x0, symName: '___41-[DAWBridgeAudioUnit internalRenderBlock]_block_invoke', symObjAddr: 0x15CC, symBinAddr: 0x100002554, symSize: 0x10 }
+  - { offset: 0x12576, size: 0x8, addend: 0x0, symName: ___copy_helper_block_ea8_32c41_ZTSNSt3__110shared_ptrI13RenderContextEE, symObjAddr: 0x15DC, symBinAddr: 0x100002564, symSize: 0x1C }
+  - { offset: 0x1259E, size: 0x8, addend: 0x0, symName: ___copy_helper_block_ea8_32c41_ZTSNSt3__110shared_ptrI13RenderContextEE, symObjAddr: 0x15DC, symBinAddr: 0x100002564, symSize: 0x1C }
+  - { offset: 0x125C6, size: 0x8, addend: 0x0, symName: ___copy_helper_block_ea8_32c41_ZTSNSt3__110shared_ptrI13RenderContextEE, symObjAddr: 0x15DC, symBinAddr: 0x100002564, symSize: 0x1C }
+  - { offset: 0x1264E, size: 0x8, addend: 0x0, symName: ___destroy_helper_block_ea8_32c41_ZTSNSt3__110shared_ptrI13RenderContextEE, symObjAddr: 0x15F8, symBinAddr: 0x100002580, symSize: 0x8 }
+  - { offset: 0x1268F, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit parameterTree]', symObjAddr: 0x1600, symBinAddr: 0x100002588, symSize: 0x284 }
+  - { offset: 0x12A6C, size: 0x8, addend: 0x0, symName: '___35-[DAWBridgeAudioUnit parameterTree]_block_invoke', symObjAddr: 0x1884, symBinAddr: 0x10000280C, symSize: 0xB8 }
+  - { offset: 0x12D2D, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit requestViewControllerWithCompletionHandler:]', symObjAddr: 0x193C, symBinAddr: 0x1000028C4, symSize: 0xAC }
+  - { offset: 0x12D93, size: 0x8, addend: 0x0, symName: '___65-[DAWBridgeAudioUnit requestViewControllerWithCompletionHandler:]_block_invoke', symObjAddr: 0x19E8, symBinAddr: 0x100002970, symSize: 0x88 }
+  - { offset: 0x12E26, size: 0x8, addend: 0x0, symName: ___copy_helper_block_ea8_32s40b, symObjAddr: 0x1A70, symBinAddr: 0x1000029F8, symSize: 0x34 }
+  - { offset: 0x12E4F, size: 0x8, addend: 0x0, symName: ___destroy_helper_block_ea8_32s40s, symObjAddr: 0x1AA4, symBinAddr: 0x100002A2C, symSize: 0x28 }
+  - { offset: 0x12E6E, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit associatedViewController]', symObjAddr: 0x1ACC, symBinAddr: 0x100002A54, symSize: 0x20 }
+  - { offset: 0x12EA6, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit setAssociatedViewController:]', symObjAddr: 0x1AEC, symBinAddr: 0x100002A74, symSize: 0x14 }
+  - { offset: 0x12EE8, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit .cxx_destruct]', symObjAddr: 0x1B00, symBinAddr: 0x100002A88, symSize: 0x88 }
+  - { offset: 0x12F73, size: 0x8, addend: 0x0, symName: '-[DAWBridgeAudioUnit .cxx_construct]', symObjAddr: 0x1B88, symBinAddr: 0x100002B10, symSize: 0x14 }
+  - { offset: 0x132C0, size: 0x8, addend: 0x0, symName: __ZNSt3__112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE20__throw_length_errorB8ne200100Ev, symObjAddr: 0x1DA0, symBinAddr: 0x100002D28, symSize: 0x14 }
+  - { offset: 0x132D7, size: 0x8, addend: 0x0, symName: __ZNSt3__120__throw_length_errorB8ne200100EPKc, symObjAddr: 0x1DB4, symBinAddr: 0x100002D3C, symSize: 0x50 }
+  - { offset: 0x132E2, size: 0x8, addend: 0x0, symName: __ZNSt12length_errorC1B8ne200100EPKc, symObjAddr: 0x1E04, symBinAddr: 0x100002D8C, symSize: 0x24 }
+  - { offset: 0x13388, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEED1Ev, symObjAddr: 0x1E28, symBinAddr: 0x100002DB0, symSize: 0x14 }
+  - { offset: 0x133AC, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEED1Ev, symObjAddr: 0x1E28, symBinAddr: 0x100002DB0, symSize: 0x14 }
+  - { offset: 0x133E3, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEED0Ev, symObjAddr: 0x1E3C, symBinAddr: 0x100002DC4, symSize: 0x28 }
+  - { offset: 0x1344A, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEE16__on_zero_sharedEv, symObjAddr: 0x1E64, symBinAddr: 0x100002DEC, symSize: 0x4 }
+  - { offset: 0x134CC, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEE21__on_zero_shared_weakEv, symObjAddr: 0x1E68, symBinAddr: 0x100002DF0, symSize: 0x8 }
+  - { offset: 0x134FF, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEE21__on_zero_shared_weakEv, symObjAddr: 0x1E68, symBinAddr: 0x100002DF0, symSize: 0x8 }
+  - { offset: 0x13523, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEE21__on_zero_shared_weakEv, symObjAddr: 0x1E68, symBinAddr: 0x100002DF0, symSize: 0x8 }
+  - { offset: 0x13548, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEE21__on_zero_shared_weakEv, symObjAddr: 0x1E68, symBinAddr: 0x100002DF0, symSize: 0x8 }
+  - { offset: 0x1357C, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEE21__on_zero_shared_weakEv, symObjAddr: 0x1E68, symBinAddr: 0x100002DF0, symSize: 0x8 }
+  - { offset: 0x13595, size: 0x8, addend: 0x0, symName: __ZNSt3__120__shared_ptr_emplaceI13RenderContextNS_9allocatorIS1_EEE21__on_zero_shared_weakEv, symObjAddr: 0x1E68, symBinAddr: 0x100002DF0, symSize: 0x8 }
+  - { offset: 0x1695F, size: 0x8, addend: 0x0, symName: '-[DAWBridgeStatusLED initWithFrame:]', symObjAddr: 0x0, symBinAddr: 0x100002E48, symSize: 0x44 }
+  - { offset: 0x169A1, size: 0x8, addend: 0x0, symName: '-[DAWBridgeStatusLED drawRect:]', symObjAddr: 0x44, symBinAddr: 0x100002E8C, symSize: 0x2E4 }
+  - { offset: 0x16A9C, size: 0x8, addend: 0x0, symName: '-[DAWBridgeStatusLED setConnected:]', symObjAddr: 0x328, symBinAddr: 0x100003170, symSize: 0x24 }
+  - { offset: 0x16ADC, size: 0x8, addend: 0x0, symName: '-[DAWBridgeStatusLED connected]', symObjAddr: 0x34C, symBinAddr: 0x100003194, symSize: 0x10 }
+  - { offset: 0x16B13, size: 0x8, addend: 0x0, symName: '-[DAWBridgeButton initWithTitle:target:action:]', symObjAddr: 0x35C, symBinAddr: 0x1000031A4, symSize: 0x190 }
+  - { offset: 0x16B77, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController loadView]', symObjAddr: 0x4EC, symBinAddr: 0x100003334, symSize: 0x3D0 }
+  - { offset: 0x16BF1, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController viewDidLoad]', symObjAddr: 0x8BC, symBinAddr: 0x100003704, symSize: 0x48 }
+  - { offset: 0x16C24, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController viewWillDisappear]', symObjAddr: 0x904, symBinAddr: 0x10000374C, symSize: 0x48 }
+  - { offset: 0x16C57, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController dealloc]', symObjAddr: 0x94C, symBinAddr: 0x100003794, symSize: 0x74 }
+  - { offset: 0x16C8A, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController audioUnit]', symObjAddr: 0x9D0, symBinAddr: 0x100003808, symSize: 0x10 }
+  - { offset: 0x16CC1, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController setAudioUnit:]', symObjAddr: 0x9E0, symBinAddr: 0x100003818, symSize: 0x90 }
+  - { offset: 0x16D3B, size: 0x8, addend: 0x0, symName: '___40-[DAWBridgeViewController setAudioUnit:]_block_invoke', symObjAddr: 0xA70, symBinAddr: 0x1000038A8, symSize: 0x1C }
+  - { offset: 0x16D7A, size: 0x8, addend: 0x0, symName: ___copy_helper_block_ea8_32s, symObjAddr: 0xA8C, symBinAddr: 0x1000038C4, symSize: 0x8 }
+  - { offset: 0x16DA1, size: 0x8, addend: 0x0, symName: ___destroy_helper_block_ea8_32s, symObjAddr: 0xA94, symBinAddr: 0x1000038CC, symSize: 0x8 }
+  - { offset: 0x16DC0, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController createAudioUnitWithComponentDescription:error:]', symObjAddr: 0xA9C, symBinAddr: 0x1000038D4, symSize: 0x20C }
+  - { offset: 0x16E99, size: 0x8, addend: 0x0, symName: '___73-[DAWBridgeViewController createAudioUnitWithComponentDescription:error:]_block_invoke', symObjAddr: 0xCA8, symBinAddr: 0x100003AE0, symSize: 0x8 }
+  - { offset: 0x16ED8, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController startStatusUpdates]', symObjAddr: 0xCB0, symBinAddr: 0x100003AE8, symSize: 0xE4 }
+  - { offset: 0x16F1A, size: 0x8, addend: 0x0, symName: '___45-[DAWBridgeViewController startStatusUpdates]_block_invoke', symObjAddr: 0xD94, symBinAddr: 0x100003BCC, symSize: 0x40 }
+  - { offset: 0x16F5F, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController stopStatusUpdates]', symObjAddr: 0xDE8, symBinAddr: 0x100003C0C, symSize: 0x34 }
+  - { offset: 0x16F92, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController updateStatus]', symObjAddr: 0xE1C, symBinAddr: 0x100003C40, symSize: 0xA4 }
+  - { offset: 0x16FD7, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController playPressed:]', symObjAddr: 0xEC0, symBinAddr: 0x100003CE4, symSize: 0x110 }
+  - { offset: 0x17091, size: 0x8, addend: 0x0, symName: '___39-[DAWBridgeViewController playPressed:]_block_invoke', symObjAddr: 0xFD0, symBinAddr: 0x100003DF4, symSize: 0xC }
+  - { offset: 0x170CF, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController stopPressed:]', symObjAddr: 0xFDC, symBinAddr: 0x100003E00, symSize: 0x110 }
+  - { offset: 0x1715A, size: 0x8, addend: 0x0, symName: '___39-[DAWBridgeViewController stopPressed:]_block_invoke', symObjAddr: 0x10EC, symBinAddr: 0x100003F10, symSize: 0xC }
+  - { offset: 0x17198, size: 0x8, addend: 0x0, symName: '-[DAWBridgeViewController .cxx_destruct]', symObjAddr: 0x10F8, symBinAddr: 0x100003F1C, symSize: 0x90 }
+...

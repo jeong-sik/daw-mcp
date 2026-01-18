@@ -1,0 +1,16 @@
+(library
+ (name daw_mcp)
+ (public_name daw_mcp)
+ (libraries
+  eio
+  yojson
+  logs
+  fmt
+  daw_driver
+  daw_mcp.integration
+  daw_mcp.metering
+  daw_mcp.sse
+  daw_mcp.automation
+  daw_mcp.bridge)
+ (preprocess
+  (pps ppx_deriving_yojson)))
