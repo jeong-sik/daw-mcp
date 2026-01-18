@@ -21,3 +21,5 @@ Thumbs.db
 # Downloaded release binary
 daw-mcp-macos-arm64
 daw-mcp-linux-x64
+# Track the local release artifact
+!daw-mcp-macos-arm64

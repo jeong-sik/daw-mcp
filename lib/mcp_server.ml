@@ -12,7 +12,7 @@ let mcp_version = "2024-11-05"
 (** Server info *)
 let server_info = `Assoc [
   ("name", `String "daw-mcp");
-  ("version", `String "0.1.0");
+  ("version", `String "0.1.1");
 ]
 
 (** JSON-RPC request *)

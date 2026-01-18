@@ -267,9 +267,8 @@ __attribute__((visibility("default")))
     // For now, we'll use a simple approach - check if AU responds
     // In production, expose connection state via AU property
 
-    // Temporary: Always show as "Ready" when AU is loaded
-    // Real implementation would query RenderContext state
-    BOOL isConnected = YES;  // TODO: Query actual connection state
+    // Prefer renderResourcesAllocated to avoid claiming "Connected" too early.
+    BOOL isConnected = _audioUnit.renderResourcesAllocated;
 
     _statusLED.connected = isConnected;
     _statusLabel.stringValue = isConnected ? @"Connected" : @"Disconnected";

@@ -199,7 +199,7 @@ module Reaper_driver : DAW_DRIVER = struct
 
   (* Tracks - stubs for now *)
   let get_tracks () =
-    Eio.Promise.create_resolved (Ok [])  (* TODO: implement track query *)
+    Eio.Promise.create_resolved (Error (Failure "Track query not implemented"))
 
   let select_track index =
     match send_trigger (Addr.track_select index) with
@@ -207,7 +207,7 @@ module Reaper_driver : DAW_DRIVER = struct
     | Error e -> Eio.Promise.create_resolved (Error e)
 
   let get_selected_track () =
-    Eio.Promise.create_resolved (Ok 1)  (* TODO: track selection state *)
+    Eio.Promise.create_resolved (Error (Failure "Track selection state not available"))
 
   (* Mixer *)
   let set_volume ~track_index value =
@@ -241,16 +241,9 @@ module Reaper_driver : DAW_DRIVER = struct
     | Error e -> Eio.Promise.create_resolved (Error e)
 
   let get_mixer_channel ~track_index =
+    let _ = track_index in
     (* TODO: implement proper state tracking via OSC feedback *)
-    Eio.Promise.create_resolved (Ok {
-      track_index;
-      volume_db = 0.0;
-      pan = 0.0;
-      mute = false;
-      solo = false;
-      arm = false;
-      sends = [];
-    })
+    Eio.Promise.create_resolved (Error (Failure "Mixer channel state not available"))
 
   (* Plugins - stubs *)
   let get_plugin_param ~track_index:_ ~plugin_index:_ ~param_index:_ =
