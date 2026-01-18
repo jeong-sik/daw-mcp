@@ -494,8 +494,8 @@ let error_to_string = function
   | `Command_failed msg -> Printf.sprintf "Command failed: %s" msg
 
 (** Make tool result JSON *)
-let make_tool_result result =
-  make_response None (`Assoc [
+let make_tool_result req_id result =
+  make_response req_id (`Assoc [
     ("content", `List [
       `Assoc [
         ("type", `String "text");
@@ -505,8 +505,8 @@ let make_tool_result result =
   ])
 
 (** Handle initialize request *)
-let handle_initialize _params =
-  make_response None (`Assoc [
+let handle_initialize req_id _params =
+  make_response req_id (`Assoc [
     ("protocolVersion", `String mcp_version);
     ("capabilities", `Assoc [
       ("tools", `Assoc []);
@@ -515,13 +515,13 @@ let handle_initialize _params =
   ])
 
 (** Handle tools/list request *)
-let handle_tools_list _params =
-  make_response None (`Assoc [
+let handle_tools_list req_id _params =
+  make_response req_id (`Assoc [
     ("tools", tools_to_json ());
   ])
 
 (** Handle tools/call request with Integration layer *)
-let handle_tools_call ~integration ~sw ~net params =
+let handle_tools_call ~req_id ~integration ~sw ~net params =
   let open Yojson.Safe.Util in
   let name = params |> member "name" |> to_string in
   let args = params |> member "arguments" in
@@ -572,7 +572,7 @@ let handle_tools_call ~integration ~sw ~net params =
              ));
            ])
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_transport" ->
     let action = args |> member "action" |> to_string in
@@ -592,7 +592,7 @@ let handle_tools_call ~integration ~sw ~net params =
       | _ ->
         `Assoc [("action", `String action); ("success", `Bool false); ("error", `String "Unknown action")]
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_tempo" ->
     let bpm = args |> member "bpm" |> to_float_option in
@@ -610,7 +610,7 @@ let handle_tools_call ~integration ~sw ~net params =
          | Error err ->
            `Assoc [("action", `String "get"); ("success", `Bool false); ("error", `String (error_to_string err))])
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_select_track" ->
     let index = args |> member "index" |> to_int_option in
@@ -624,7 +624,7 @@ let handle_tools_call ~integration ~sw ~net params =
       | None ->
         `Assoc [("success", `Bool false); ("error", `String "Track index required")]
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_mixer" ->
     let track = args |> member "track" |> to_int in
@@ -664,7 +664,7 @@ let handle_tools_call ~integration ~sw ~net params =
       | None -> results
     in
     let result = `Assoc (("track", `Int track) :: results) in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_tracks" ->
     let result = match Daw_integration.Tracks.get_all integration ~sw ~net with
@@ -691,7 +691,7 @@ let handle_tools_call ~integration ~sw ~net params =
           ("error", `String (error_to_string err));
         ]
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_status" ->
     let (state, daw_name, error_msg) = Daw_integration.get_status integration in
@@ -701,7 +701,7 @@ let handle_tools_call ~integration ~sw ~net params =
       ("error", match error_msg with Some e -> `String e | None -> `Null);
       ("connected", `Bool (state = "connected"));
     ] in
-    make_tool_result result
+    make_tool_result req_id result
 
   (* Phase 6: Real-time Metering *)
   | "daw_meter" ->
@@ -720,7 +720,7 @@ let handle_tools_call ~integration ~sw ~net params =
       ("frame", Metering.frame_to_json frame);
       ("success", `Bool true);
     ] in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_meter_stream" ->
     let action = args |> member "action" |> to_string in
@@ -748,7 +748,7 @@ let handle_tools_call ~integration ~sw ~net params =
           ("error", `String "Invalid action (use 'start' or 'stop')");
         ]
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   (* Phase 6: Automation *)
   | "daw_automation_read" ->
@@ -775,7 +775,7 @@ let handle_tools_call ~integration ~sw ~net params =
       ("count", `Int (List.length filtered_points));
       ("success", `Bool true);
     ] in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_automation_write" ->
     let track = args |> member "track" |> to_int in
@@ -801,7 +801,7 @@ let handle_tools_call ~integration ~sw ~net params =
         | None -> `Null);
       ("success", `Bool true);
     ] in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_automation_mode" ->
     let track = args |> member "track" |> to_int in
@@ -821,7 +821,7 @@ let handle_tools_call ~integration ~sw ~net params =
           ("error", `String (Printf.sprintf "Unknown mode: %s" mode_str));
         ]
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   (* Phase 5: Plugin, Settings, Markers, Routing, Render *)
   | "daw_plugin_param" ->
@@ -868,7 +868,7 @@ let handle_tools_call ~integration ~sw ~net params =
           ("error", `String "Must specify param_id or list=true");
         ]
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_settings" ->
     let buffer_size_opt = args |> member "buffer_size" |> to_int_option in
@@ -882,7 +882,7 @@ let handle_tools_call ~integration ~sw ~net params =
       ("latency_ms", `Float 11.6);
       ("success", `Bool true);
     ] in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_markers" ->
     let action = match args |> member "action" with
@@ -932,7 +932,7 @@ let handle_tools_call ~integration ~sw ~net params =
       | _ ->
         `Assoc [("success", `Bool false); ("error", `String (Printf.sprintf "Unknown action: %s" action))]
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_routing" ->
     let track = args |> member "track" |> to_int in
@@ -977,7 +977,7 @@ let handle_tools_call ~integration ~sw ~net params =
       | _ ->
         `Assoc [("success", `Bool false); ("error", `String (Printf.sprintf "Unknown action: %s" action))]
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   | "daw_render" ->
     let action = match args |> member "action" with
@@ -1019,7 +1019,7 @@ let handle_tools_call ~integration ~sw ~net params =
       | _ ->
         `Assoc [("success", `Bool false); ("error", `String (Printf.sprintf "Unknown action: %s" action))]
     in
-    make_tool_result result
+    make_tool_result req_id result
 
   | _ ->
     make_error None (-32601) (Printf.sprintf "Unknown tool: %s" name)
@@ -1034,13 +1034,14 @@ type 'a server_context = {
 (** Handle JSON-RPC request with context *)
 let handle_request_with_context ~ctx req =
   match req.method_ with
-  | "initialize" -> handle_initialize req.params
+  | "initialize" -> handle_initialize req.id req.params
   | "initialized" -> make_response req.id (`Assoc [])
-  | "tools/list" -> handle_tools_list req.params
+  | "tools/list" -> handle_tools_list req.id req.params
   | "tools/call" ->
     (match req.params with
      | Some params ->
        handle_tools_call
+         ~req_id:req.id
          ~integration:ctx.integration
          ~sw:ctx.sw
          ~net:ctx.net
@@ -1074,9 +1075,9 @@ let create_context ~sw ~net =
 (** Handle JSON-RPC request (stateless - deprecated) *)
 let handle_request req =
   match req.method_ with
-  | "initialize" -> handle_initialize req.params
+  | "initialize" -> handle_initialize req.id req.params
   | "initialized" -> make_response req.id (`Assoc [])
-  | "tools/list" -> handle_tools_list req.params
+  | "tools/list" -> handle_tools_list req.id req.params
   | "tools/call" ->
     (match req.params with
      | Some _params -> make_error req.id (-32603) "Use process_json_with_context for tool calls"
