@@ -39,13 +39,25 @@ let run_stdio () =
   | End_of_file -> Logs.info (fun m -> m "DAW MCP shutting down")
   | Eio.Buf_read.Buffer_limit_exceeded -> Logs.err (fun m -> m "Input too large")
 
-(** Run HTTP transport using Eio *)
+(** Parse HTTP request line into (method, path) *)
+let parse_request_line line =
+  match String.split_on_char ' ' line with
+  | method_ :: path :: _ -> (method_, path)
+  | _ -> ("GET", "/")
+
+(** Send SSE event *)
+let send_sse_event flow ~event ~data =
+  let msg = Printf.sprintf "event: %s\ndata: %s\n\n" event data in
+  Eio.Flow.copy_string msg flow
+
+(** Run HTTP transport using Eio with SSE support for MCP streamable-http *)
 let run_http port =
   setup_logging (Some Logs.Info);
   Logs.info (fun m -> m "DAW MCP starting (HTTP mode on port %d)" port);
 
   Eio_main.run @@ fun env ->
   let net = Eio.Stdenv.net env in
+  let clock = Eio.Stdenv.clock env in
 
   Eio.Switch.run @@ fun sw ->
   let ctx = Daw_mcp.Mcp_server.create_context ~sw ~net in
@@ -53,21 +65,25 @@ let run_http port =
   let socket = Eio.Net.listen ~sw ~backlog:128 ~reuse_addr:true net addr in
 
   Logs.info (fun m -> m "Listening on http://127.0.0.1:%d" port);
+  Logs.info (fun m -> m "  GET /mcp  -> SSE stream (streamable-http)");
+  Logs.info (fun m -> m "  POST /mcp -> JSON-RPC requests");
 
   (* Accept connections *)
   while true do
     Eio.Net.accept_fork socket ~sw ~on_error:(fun exn ->
       Logs.err (fun m -> m "Connection error: %s" (Printexc.to_string exn))
     ) (fun flow _addr ->
-      (* Read HTTP request with proper Content-Length handling *)
       let buf = Eio.Buf_read.of_flow ~max_size:1_000_000 flow in
+
+      (* Parse request line *)
+      let first_line = Eio.Buf_read.line buf in
+      let (http_method, path) = parse_request_line first_line in
 
       (* Parse headers and extract Content-Length *)
       let content_length = ref 0 in
       let rec parse_headers () =
         let line = Eio.Buf_read.line buf in
         if String.length line > 0 then begin
-          (* Parse Content-Length header (case-insensitive) *)
           let lower = String.lowercase_ascii line in
           if String.length lower > 15 && String.sub lower 0 15 = "content-length:" then begin
             let value_str = String.trim (String.sub line 15 (String.length line - 15)) in
@@ -76,32 +92,67 @@ let run_http port =
           parse_headers ()
         end
       in
-
-      (* Read first line (method/path) *)
-      let first_line = Eio.Buf_read.line buf in
-      ignore first_line;  (* POST / HTTP/1.1 *)
-
       parse_headers ();
 
-      (* Read exactly Content-Length bytes *)
-      let body =
-        if !content_length > 0 then
-          Eio.Buf_read.take !content_length buf
-        else
-          ""
-      in
+      match http_method, path with
+      | "GET", "/mcp" ->
+        (* SSE stream for MCP streamable-http *)
+        Logs.info (fun m -> m "SSE client connected");
+        let headers = String.concat "\r\n" [
+          "HTTP/1.1 200 OK";
+          "Content-Type: text/event-stream";
+          "Cache-Control: no-cache";
+          "Connection: keep-alive";
+          "Access-Control-Allow-Origin: *";
+          "\r\n"
+        ] in
+        Eio.Flow.copy_string headers flow;
 
-      (* Process JSON-RPC with context *)
-      let response = Daw_mcp.Mcp_server.process_json_with_context ~ctx body in
-      let response_body = Yojson.Safe.to_string response in
+        (* Send initial endpoint event (MCP protocol) *)
+        send_sse_event flow ~event:"endpoint" ~data:"/mcp";
 
-      (* Send HTTP response *)
-      let headers = Printf.sprintf
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n"
-        (String.length response_body)
-      in
-      Eio.Flow.copy_string headers flow;
-      Eio.Flow.copy_string response_body flow
+        (* Keep connection alive with periodic pings *)
+        (try
+          while true do
+            Eio.Time.sleep clock 15.0;
+            send_sse_event flow ~event:"ping" ~data:(string_of_float (Unix.gettimeofday ()))
+          done
+        with _ -> Logs.info (fun m -> m "SSE client disconnected"))
+
+      | "POST", "/mcp" | "POST", "/" ->
+        (* JSON-RPC request *)
+        let body =
+          if !content_length > 0 then Eio.Buf_read.take !content_length buf
+          else ""
+        in
+        let response = Daw_mcp.Mcp_server.process_json_with_context ~ctx body in
+        let response_body = Yojson.Safe.to_string response in
+        let headers = Printf.sprintf
+          "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: %d\r\n\r\n"
+          (String.length response_body)
+        in
+        Eio.Flow.copy_string headers flow;
+        Eio.Flow.copy_string response_body flow
+
+      | "OPTIONS", _ ->
+        (* CORS preflight *)
+        let headers = String.concat "\r\n" [
+          "HTTP/1.1 204 No Content";
+          "Access-Control-Allow-Origin: *";
+          "Access-Control-Allow-Methods: GET, POST, OPTIONS";
+          "Access-Control-Allow-Headers: Content-Type";
+          "\r\n"
+        ] in
+        Eio.Flow.copy_string headers flow
+
+      | _ ->
+        (* 404 *)
+        let body = "Not Found" in
+        let headers = Printf.sprintf
+          "HTTP/1.1 404 Not Found\r\nContent-Length: %d\r\n\r\n" (String.length body)
+        in
+        Eio.Flow.copy_string headers flow;
+        Eio.Flow.copy_string body flow
     )
   done
 
