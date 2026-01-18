@@ -1,0 +1,4 @@
+(library
+ (name automation)
+ (public_name daw_mcp.automation)
+ (libraries yojson))

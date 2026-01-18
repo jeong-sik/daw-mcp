@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.dancer.daw-bridge</string>
+    <key>CFBundleName</key>
+    <string>DAW Bridge</string>
+    <key>CFBundleDisplayName</key>
+    <string>DAW Bridge</string>
+    <key>CFBundleVersion</key>
+    <string>1.4.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.4.0</string>
+    <key>CFBundlePackageType</key>
+    <string>BNDL</string>
+    <key>CFBundleExecutable</key>
+    <string>DAWBridge</string>
+    <key>AudioComponents</key>
+    <array>
+        <dict>
+            <key>name</key>
+            <string>Dancer: DAW Bridge</string>
+            <key>description</key>
+            <string>AI-controlled DAW bridge</string>
+            <key>manufacturer</key>
+            <string>Dncr</string>
+            <key>type</key>
+            <string>aufx</string>
+            <key>subtype</key>
+            <string>dbri</string>
+            <key>version</key>
+            <integer>66560</integer>
+            <key>sandboxSafe</key>
+            <true/>
+            <key>factoryFunction</key>
+            <string>DAWBridgeViewControllerFactory</string>
+            <key>tags</key>
+            <array>
+                <string>Effects</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

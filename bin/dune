@@ -1,0 +1,13 @@
+(executable
+ (name main)
+ (public_name daw-mcp)
+ (package daw_mcp)
+ (libraries
+  daw_mcp
+  daw_mcp.osc
+  daw_mcp.driver
+  eio_main
+  cmdliner
+  logs
+  logs.fmt
+  fmt.tty))

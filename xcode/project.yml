@@ -1,0 +1,90 @@
+name: DAWBridge
+options:
+  bundleIdPrefix: com.dancer
+  deploymentTarget:
+    macOS: "12.0"
+  xcodeVersion: "15.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    CLANG_CXX_LANGUAGE_STANDARD: c++17
+    CLANG_ENABLE_OBJC_ARC: YES
+    MACOSX_DEPLOYMENT_TARGET: "12.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+
+targets:
+  # Containing App (required for AUv3 distribution)
+  DAWBridge:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+        type: group
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dancer.daw-bridge
+        PRODUCT_NAME: DAW Bridge
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/DAWBridge.entitlements
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: YES
+    dependencies:
+      - target: DAWBridgeAU
+        embed: true
+        codeSign: true
+        buildPhase:
+          copyFiles:
+            destination: pluginsFolder
+
+  # Audio Unit Extension
+  DAWBridgeAU:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: AUExtension
+        type: group
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dancer.daw-bridge.au
+        PRODUCT_NAME: DAWBridgeAU
+        INFOPLIST_FILE: AUExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: AUExtension/DAWBridgeAU.entitlements
+        SKIP_INSTALL: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
+        OTHER_LDFLAGS: "-lc++"
+    info:
+      path: AUExtension/Info.plist
+      properties:
+        CFBundleDisplayName: DAW Bridge AU
+        CFBundleShortVersionString: "1.4.0"
+        CFBundleVersion: "1.4.0"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.AudioUnit-UI
+          NSExtensionPrincipalClass: DAWBridgeViewController
+          NSExtensionAttributes:
+            AudioComponents:
+              - name: "Dancer: DAW Bridge"
+                description: "AI-controlled DAW bridge"
+                manufacturer: Dncr
+                type: aufx
+                subtype: dbri
+                version: 66560
+                sandboxSafe: true
+                tags:
+                  - Effects
+    dependencies:
+      - framework: AudioToolbox.framework
+        implicit: true
+      - framework: AVFoundation.framework
+        implicit: true
+      - framework: CoreAudioKit.framework
+        implicit: true
+      - framework: Cocoa.framework
+        implicit: true
+      - framework: CoreMIDI.framework
+        implicit: true
+      - framework: AppKit.framework
+        implicit: true
+      - framework: Foundation.framework
+        implicit: true

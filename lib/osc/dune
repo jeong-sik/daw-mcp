@@ -1,0 +1,5 @@
+(library
+ (name osc)
+ (public_name daw_mcp.osc)
+ (libraries cstruct angstrom faraday eio unix logs)
+ (preprocess (pps ppx_deriving.show)))

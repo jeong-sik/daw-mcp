@@ -1,0 +1,23 @@
+# OCaml build artifacts
+_build/
+*.install
+*.merlin
+.merlin
+_opam/
+
+# Editor
+.vscode/
+*.swp
+*~
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+*.log
+
+# Downloaded release binary
+daw-mcp-macos-arm64
+daw-mcp-linux-x64
