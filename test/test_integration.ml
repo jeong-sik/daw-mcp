@@ -88,7 +88,8 @@ let test_connection_error_handling () =
   Eio.Switch.run @@ fun sw ->
   let net = Eio.Stdenv.net env in
   let ctx = Mcp_server.create_context ~sw ~net in
-  (* Try to play without connecting - should return error *)
+  let running = Daw_integration.detect_running_daws () in
+  (* If no DAW is running, should return error; otherwise auto-connect may succeed. *)
   let request = {|{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"daw_transport","arguments":{"action":"play"}}}|} in
   let response = Mcp_server.process_json_with_context ~ctx request in
   let open Yojson.Safe.Util in
@@ -97,7 +98,10 @@ let test_connection_error_handling () =
   let text = List.hd content |> member "text" |> to_string in
   let inner = Yojson.Safe.from_string text in
   let success = inner |> member "success" |> to_bool in
-  Alcotest.(check bool) "should fail without connection" false success
+  if running = [] then
+    Alcotest.(check bool) "should fail without connection" false success
+  else
+    Alcotest.(check bool) "may succeed when DAW is running" true success
 
 (** All tests *)
 let () =
