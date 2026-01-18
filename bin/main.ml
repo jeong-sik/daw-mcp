@@ -50,6 +50,41 @@ let send_sse_event flow ~event ~data =
   let msg = Printf.sprintf "event: %s\ndata: %s\n\n" event data in
   Eio.Flow.copy_string msg flow
 
+(** SSE client registry for shutdown notification *)
+type sse_client = {
+  flow: Eio.Flow.sink_ty Eio.Resource.t;
+  mutable connected: bool;
+}
+let sse_clients : (int, sse_client) Hashtbl.t = Hashtbl.create 16
+let sse_client_counter = ref 0
+
+let register_sse_client flow =
+  incr sse_client_counter;
+  let id = !sse_client_counter in
+  let client = { flow; connected = true } in
+  Hashtbl.add sse_clients id client;
+  id
+
+let unregister_sse_client id =
+  (match Hashtbl.find_opt sse_clients id with
+   | Some c -> c.connected <- false
+   | None -> ());
+  Hashtbl.remove sse_clients id
+
+let broadcast_sse_shutdown reason =
+  let data = Printf.sprintf
+    {|{"jsonrpc":"2.0","method":"notifications/shutdown","params":{"reason":"%s","message":"Server is shutting down, please reconnect"}}|}
+    reason
+  in
+  let msg = Printf.sprintf "event: notification\ndata: %s\n\n" data in
+  Hashtbl.iter (fun _ client ->
+    if client.connected then
+      try Eio.Flow.copy_string msg client.flow with _ -> ()
+  ) sse_clients
+
+(** Graceful shutdown exception *)
+exception Shutdown
+
 (** Run HTTP transport using Eio with SSE support for MCP streamable-http *)
 let run_http port =
   setup_logging (Some Logs.Info);
@@ -59,7 +94,32 @@ let run_http port =
   let net = Eio.Stdenv.net env in
   let clock = Eio.Stdenv.clock env in
 
+  (* Graceful shutdown setup *)
+  let switch_ref = ref None in
+  let shutdown_initiated = ref false in
+  let initiate_shutdown signal_name =
+    if not !shutdown_initiated then begin
+      shutdown_initiated := true;
+      Logs.info (fun m -> m "DAW MCP: Received %s, shutting down gracefully..." signal_name);
+
+      (* Broadcast shutdown notification to all SSE clients *)
+      broadcast_sse_shutdown signal_name;
+      Logs.info (fun m -> m "DAW MCP: Sent shutdown notification to %d SSE clients" (Hashtbl.length sse_clients));
+
+      (* Give clients 500ms to receive the notification *)
+      Unix.sleepf 0.5;
+
+      match !switch_ref with
+      | Some sw -> Eio.Switch.fail sw Shutdown
+      | None -> ()
+    end
+  in
+  Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> initiate_shutdown "SIGTERM"));
+  Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> initiate_shutdown "SIGINT"));
+
+  (try
   Eio.Switch.run @@ fun sw ->
+  switch_ref := Some sw;
   let ctx = Daw_mcp.Mcp_server.create_context ~sw ~net in
   let addr = `Tcp (Eio.Net.Ipaddr.V4.loopback, port) in
   let socket = Eio.Net.listen ~sw ~backlog:128 ~reuse_addr:true net addr in
@@ -67,6 +127,7 @@ let run_http port =
   Logs.info (fun m -> m "Listening on http://127.0.0.1:%d" port);
   Logs.info (fun m -> m "  GET /mcp  -> SSE stream (streamable-http)");
   Logs.info (fun m -> m "  POST /mcp -> JSON-RPC requests");
+  Logs.info (fun m -> m "  Graceful shutdown: SIGTERM/SIGINT supported");
 
   (* Accept connections *)
   while true do
@@ -98,6 +159,10 @@ let run_http port =
       | "GET", "/mcp" ->
         (* SSE stream for MCP streamable-http *)
         Logs.info (fun m -> m "SSE client connected");
+
+        (* Register client for shutdown broadcast *)
+        let client_id = register_sse_client (flow :> Eio.Flow.sink_ty Eio.Resource.t) in
+
         let headers = String.concat "\r\n" [
           "HTTP/1.1 200 OK";
           "Content-Type: text/event-stream";
@@ -117,7 +182,9 @@ let run_http port =
             Eio.Time.sleep clock 15.0;
             send_sse_event flow ~event:"ping" ~data:(string_of_float (Unix.gettimeofday ()))
           done
-        with _ -> Logs.info (fun m -> m "SSE client disconnected"))
+        with _ ->
+          unregister_sse_client client_id;
+          Logs.info (fun m -> m "SSE client disconnected"))
 
       | "POST", "/mcp" | "POST", "/" ->
         (* JSON-RPC request *)
@@ -155,6 +222,11 @@ let run_http port =
         Eio.Flow.copy_string body flow
     )
   done
+  with
+  | Shutdown ->
+      Logs.info (fun m -> m "DAW MCP: Shutdown complete.")
+  | Eio.Cancel.Cancelled _ ->
+      Logs.info (fun m -> m "DAW MCP: Shutdown complete."))
 
 (** Run Unix socket transport for AU/CLAP plugin IPC *)
 let run_socket socket_path =
@@ -167,12 +239,30 @@ let run_socket socket_path =
   Eio_main.run @@ fun env ->
   let net = Eio.Stdenv.net env in
 
+  (* Graceful shutdown setup *)
+  let switch_ref = ref None in
+  let shutdown_initiated = ref false in
+  let initiate_shutdown signal_name =
+    if not !shutdown_initiated then begin
+      shutdown_initiated := true;
+      Logs.info (fun m -> m "DAW MCP: Received %s, shutting down gracefully..." signal_name);
+      match !switch_ref with
+      | Some sw -> Eio.Switch.fail sw Shutdown
+      | None -> ()
+    end
+  in
+  Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> initiate_shutdown "SIGTERM"));
+  Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> initiate_shutdown "SIGINT"));
+
+  (try
   Eio.Switch.run @@ fun sw ->
+  switch_ref := Some sw;
   let ctx = Daw_mcp.Mcp_server.create_context ~sw ~net in
   let addr = `Unix socket_path in
   let socket = Eio.Net.listen ~sw ~backlog:16 ~reuse_addr:true net addr in
 
   Logs.info (fun m -> m "Listening on %s" socket_path);
+  Logs.info (fun m -> m "  Graceful shutdown: SIGTERM/SIGINT supported");
 
   (* Accept connections *)
   while true do
@@ -196,6 +286,11 @@ let run_socket socket_path =
       | exn -> Logs.err (fun m -> m "Error: %s" (Printexc.to_string exn))
     )
   done
+  with
+  | Shutdown ->
+      Logs.info (fun m -> m "DAW MCP: Shutdown complete.")
+  | Eio.Cancel.Cancelled _ ->
+      Logs.info (fun m -> m "DAW MCP: Shutdown complete."))
 
 (** Command-line interface *)
 let port_arg =
