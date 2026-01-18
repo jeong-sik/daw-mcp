@@ -21,3 +21,9 @@ Thumbs.db
 # Downloaded release binary
 daw-mcp-macos-arm64
 daw-mcp-linux-x64
+
+# Worktrees
+.worktrees/
+
+# Xcode build
+xcode/build/
