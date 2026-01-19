@@ -12,6 +12,25 @@ let setup_logging level =
   Logs.set_level level;
   Logs.set_reporter (Logs_fmt.reporter ())
 
+type jsonrpc_kind =
+  [ `Request | `Notification | `Response | `Unknown ]
+
+let classify_jsonrpc_message (body : string) : jsonrpc_kind =
+  match Yojson.Safe.from_string body with
+  | exception _ -> `Unknown
+  | `Assoc fields ->
+      let has_method = List.mem_assoc "method" fields in
+      let id = List.assoc_opt "id" fields in
+      let has_result = List.mem_assoc "result" fields in
+      let has_error = List.mem_assoc "error" fields in
+      (match has_method, id with
+       | true, None
+       | true, Some `Null -> `Notification
+       | true, Some _ -> `Request
+       | false, Some _ when has_result || has_error -> `Response
+       | _ -> `Unknown)
+  | _ -> `Unknown
+
 (** Run stdio transport - reads JSON-RPC from stdin, writes to stdout *)
 let run_stdio () =
   setup_logging (Some Logs.Warning);
@@ -31,8 +50,13 @@ let run_stdio () =
     while true do
       let line = Eio.Buf_read.line buf in
       if String.length line > 0 then begin
-        let response = Daw_mcp.Mcp_server.process_line_with_context ~ctx line in
-        Eio.Flow.copy_string (response ^ "\n") stdout_flow
+        match classify_jsonrpc_message line with
+        | `Notification | `Response ->
+            (* Notification/response: no stdout per JSON-RPC *)
+            ()
+        | `Request | `Unknown ->
+            let response = Daw_mcp.Mcp_server.process_line_with_context ~ctx line in
+            Eio.Flow.copy_string (response ^ "\n") stdout_flow
       end
     done
   with
@@ -192,14 +216,24 @@ let run_http port =
           if !content_length > 0 then Eio.Buf_read.take !content_length buf
           else ""
         in
-        let response = Daw_mcp.Mcp_server.process_json_with_context ~ctx body in
-        let response_body = Yojson.Safe.to_string response in
-        let headers = Printf.sprintf
-          "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: %d\r\n\r\n"
-          (String.length response_body)
-        in
-        Eio.Flow.copy_string headers flow;
-        Eio.Flow.copy_string response_body flow
+        (match classify_jsonrpc_message body with
+         | `Notification | `Response ->
+             let headers = String.concat "\r\n" [
+               "HTTP/1.1 202 Accepted";
+               "Access-Control-Allow-Origin: *";
+               "Content-Length: 0";
+               "\r\n"
+             ] in
+             Eio.Flow.copy_string headers flow
+         | `Request | `Unknown ->
+             let response = Daw_mcp.Mcp_server.process_json_with_context ~ctx body in
+             let response_body = Yojson.Safe.to_string response in
+             let headers = Printf.sprintf
+               "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: %d\r\n\r\n"
+               (String.length response_body)
+             in
+             Eio.Flow.copy_string headers flow;
+             Eio.Flow.copy_string response_body flow)
 
       | "OPTIONS", _ ->
         (* CORS preflight *)
