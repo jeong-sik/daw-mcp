@@ -51,8 +51,10 @@ let run_stdio () =
       let line = Eio.Buf_read.line buf in
       if String.length line > 0 then begin
         match classify_jsonrpc_message line with
-        | `Notification | `Response ->
-            (* Notification/response: no stdout per JSON-RPC *)
+        | `Notification ->
+            ignore (Daw_mcp.Mcp_server.process_line_with_context ~ctx line)
+        | `Response ->
+            (* Response: ignore for server-only stdio usage *)
             ()
         | `Request | `Unknown ->
             let response = Daw_mcp.Mcp_server.process_line_with_context ~ctx line in
@@ -217,7 +219,16 @@ let run_http port =
           else ""
         in
         (match classify_jsonrpc_message body with
-         | `Notification | `Response ->
+         | `Notification ->
+             ignore (Daw_mcp.Mcp_server.process_json_with_context ~ctx body);
+             let headers = String.concat "\r\n" [
+               "HTTP/1.1 202 Accepted";
+               "Access-Control-Allow-Origin: *";
+               "Content-Length: 0";
+               "\r\n"
+             ] in
+             Eio.Flow.copy_string headers flow
+         | `Response ->
              let headers = String.concat "\r\n" [
                "HTTP/1.1 202 Accepted";
                "Access-Control-Allow-Origin: *";
