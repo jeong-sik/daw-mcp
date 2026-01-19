@@ -7,7 +7,7 @@
 open Types
 
 (** MCP protocol version *)
-let mcp_version = "2024-11-05"
+let mcp_version = "2025-11-25"
 
 (** Server info *)
 let server_info = `Assoc [
@@ -59,6 +59,15 @@ type tool = {
   name : string;
   description : string;
   input_schema : Yojson.Safe.t;
+}
+
+(** MCP Resource definition *)
+type resource = {
+  uri : string;
+  name : string;
+  description : string;
+  mime_type : string;
+  text : string;
 }
 
 (** Define all MCP tools *)
@@ -475,13 +484,82 @@ let tools : tool list = [
 
 (** Convert tools to MCP format *)
 let tools_to_json () =
-  `List (List.map (fun t ->
+  `List (List.map (fun (t : tool) ->
     `Assoc [
       ("name", `String t.name);
       ("description", `String t.description);
       ("inputSchema", t.input_schema);
     ]
   ) tools)
+
+(** Define MCP resources *)
+let resources : resource list = [
+  {
+    uri = "daw://docs/usage";
+    name = "DAW MCP Usage";
+    description = "How to run and call DAW MCP tools";
+    mime_type = "text/markdown";
+    text = {|
+## DAW MCP Usage
+
+Run (HTTP):
+./start-daw-mcp.sh --http --port 8950
+
+Run (stdio):
+./start-daw-mcp.sh
+
+Examples:
+- daw_transport {"action": "play"}
+- daw_tempo {"bpm": 120}
+
+Tools:
+- daw_detect, daw_transport, daw_tempo, daw_select_track, daw_mixer, daw_tracks,
+  daw_automation_read, daw_automation_write, daw_automation_mode, daw_plugin_param,
+  daw_markers, daw_routing, daw_render, daw_meter, daw_meter_stream,
+  daw_settings, daw_status
+|};
+  };
+  {
+    uri = "daw://docs/tools";
+    name = "DAW MCP Tools";
+    description = "Tool inventory and quick notes";
+    mime_type = "text/markdown";
+    text = {|
+## DAW MCP Tools
+
+All tools are currently implemented as code but mostly untested.
+
+- daw_detect
+- daw_transport
+- daw_tempo
+- daw_select_track
+- daw_mixer
+- daw_tracks
+- daw_automation_read
+- daw_automation_write
+- daw_automation_mode
+- daw_plugin_param
+- daw_markers
+- daw_routing
+- daw_render
+- daw_meter
+- daw_meter_stream
+- daw_settings
+- daw_status
+|};
+  };
+]
+
+(** Convert resources to MCP format *)
+let resources_to_json () =
+  `List (List.map (fun (r : resource) ->
+    `Assoc [
+      ("uri", `String r.uri);
+      ("name", `String r.name);
+      ("description", `String r.description);
+      ("mimeType", `String r.mime_type);
+    ]
+  ) resources)
 
 (** Format connection error as string *)
 let error_to_string = function
@@ -510,6 +588,9 @@ let handle_initialize req_id _params =
     ("protocolVersion", `String mcp_version);
     ("capabilities", `Assoc [
       ("tools", `Assoc []);
+      ("resources", `Assoc [
+        ("listChanged", `Bool false);
+      ]);
     ]);
     ("serverInfo", server_info);
   ])
@@ -518,6 +599,44 @@ let handle_initialize req_id _params =
 let handle_tools_list req_id _params =
   make_response req_id (`Assoc [
     ("tools", tools_to_json ());
+  ])
+
+(** Handle resources/list request *)
+let handle_resources_list req_id _params =
+  make_response req_id (`Assoc [
+    ("resources", resources_to_json ());
+  ])
+
+(** Handle resources/read request *)
+let handle_resources_read req_id params =
+  let open Yojson.Safe.Util in
+  let uri =
+    match params with
+    | None -> None
+    | Some params_json -> params_json |> member "uri" |> to_string_option
+  in
+  match uri with
+  | None -> make_error req_id (-32602) "Missing uri"
+  | Some uri_value ->
+      (match List.find_opt (fun r -> String.equal r.uri uri_value) resources with
+       | Some resource ->
+           make_response req_id (`Assoc [
+             ("contents", `List [
+               `Assoc [
+                 ("uri", `String resource.uri);
+                 ("mimeType", `String resource.mime_type);
+                 ("text", `String resource.text);
+               ]
+             ]);
+           ])
+       | None ->
+           make_error req_id (-32602)
+             (Printf.sprintf "Unknown resource: %s" uri_value))
+
+(** Handle resources/templates/list request *)
+let handle_resources_templates_list req_id _params =
+  make_response req_id (`Assoc [
+    ("resourceTemplates", `List []);
   ])
 
 (** Handle tools/call request with Integration layer *)
@@ -1038,6 +1157,9 @@ let handle_request_with_context ~ctx req =
   | "initialized"
   | "notifications/initialized" -> make_response req.id (`Assoc [])
   | "tools/list" -> handle_tools_list req.id req.params
+  | "resources/list" -> handle_resources_list req.id req.params
+  | "resources/read" -> handle_resources_read req.id req.params
+  | "resources/templates/list" -> handle_resources_templates_list req.id req.params
   | "tools/call" ->
     (match req.params with
      | Some params ->
@@ -1080,6 +1202,9 @@ let handle_request req =
   | "initialized"
   | "notifications/initialized" -> make_response req.id (`Assoc [])
   | "tools/list" -> handle_tools_list req.id req.params
+  | "resources/list" -> handle_resources_list req.id req.params
+  | "resources/read" -> handle_resources_read req.id req.params
+  | "resources/templates/list" -> handle_resources_templates_list req.id req.params
   | "tools/call" ->
     (match req.params with
      | Some _params -> make_error req.id (-32603) "Use process_json_with_context for tool calls"

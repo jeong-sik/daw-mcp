@@ -92,6 +92,11 @@ All tools exist as code but most are untested.
 | `daw_settings` | Audio settings (sample rate, buffer) | 🚧 |
 | `daw_status` | Connection status | 🚧 |
 
+## MCP Resources
+
+- `daw://docs/usage` - Usage and run modes
+- `daw://docs/tools` - Tool inventory
+
 ### Example Use Cases (Untested)
 
 ```
