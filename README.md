@@ -94,7 +94,8 @@ All tools exist as code but most are untested.
 
 ## MCP Resources
 
-- `daw://docs/usage` - Usage and tool overview
+- `daw://docs/usage` - Usage and run modes
+- `daw://docs/tools` - Tool inventory
 
 ### Example Use Cases (Untested)
 

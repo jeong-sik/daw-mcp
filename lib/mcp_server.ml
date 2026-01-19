@@ -7,7 +7,7 @@
 open Types
 
 (** MCP protocol version *)
-let mcp_version = "2024-11-05"
+let mcp_version = "2025-11-25"
 
 (** Server info *)
 let server_info = `Assoc [
@@ -519,6 +519,35 @@ Tools:
   daw_settings, daw_status
 |};
   };
+  {
+    uri = "daw://docs/tools";
+    name = "DAW MCP Tools";
+    description = "Tool inventory and quick notes";
+    mime_type = "text/markdown";
+    text = {|
+## DAW MCP Tools
+
+All tools are currently implemented as code but mostly untested.
+
+- daw_detect
+- daw_transport
+- daw_tempo
+- daw_select_track
+- daw_mixer
+- daw_tracks
+- daw_automation_read
+- daw_automation_write
+- daw_automation_mode
+- daw_plugin_param
+- daw_markers
+- daw_routing
+- daw_render
+- daw_meter
+- daw_meter_stream
+- daw_settings
+- daw_status
+|};
+  };
 ]
 
 (** Convert resources to MCP format *)
@@ -603,6 +632,12 @@ let handle_resources_read req_id params =
        | None ->
            make_error req_id (-32602)
              (Printf.sprintf "Unknown resource: %s" uri_value))
+
+(** Handle resources/templates/list request *)
+let handle_resources_templates_list req_id _params =
+  make_response req_id (`Assoc [
+    ("resourceTemplates", `List []);
+  ])
 
 (** Handle tools/call request with Integration layer *)
 let handle_tools_call ~req_id ~integration ~sw ~net params =
@@ -1124,6 +1159,7 @@ let handle_request_with_context ~ctx req =
   | "tools/list" -> handle_tools_list req.id req.params
   | "resources/list" -> handle_resources_list req.id req.params
   | "resources/read" -> handle_resources_read req.id req.params
+  | "resources/templates/list" -> handle_resources_templates_list req.id req.params
   | "tools/call" ->
     (match req.params with
      | Some params ->
@@ -1168,6 +1204,7 @@ let handle_request req =
   | "tools/list" -> handle_tools_list req.id req.params
   | "resources/list" -> handle_resources_list req.id req.params
   | "resources/read" -> handle_resources_read req.id req.params
+  | "resources/templates/list" -> handle_resources_templates_list req.id req.params
   | "tools/call" ->
     (match req.params with
      | Some _params -> make_error req.id (-32603) "Use process_json_with_context for tool calls"
