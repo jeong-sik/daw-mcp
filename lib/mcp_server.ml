@@ -1035,7 +1035,8 @@ type 'a server_context = {
 let handle_request_with_context ~ctx req =
   match req.method_ with
   | "initialize" -> handle_initialize req.id req.params
-  | "initialized" -> make_response req.id (`Assoc [])
+  | "initialized"
+  | "notifications/initialized" -> make_response req.id (`Assoc [])
   | "tools/list" -> handle_tools_list req.id req.params
   | "tools/call" ->
     (match req.params with
@@ -1076,7 +1077,8 @@ let create_context ~sw ~net =
 let handle_request req =
   match req.method_ with
   | "initialize" -> handle_initialize req.id req.params
-  | "initialized" -> make_response req.id (`Assoc [])
+  | "initialized"
+  | "notifications/initialized" -> make_response req.id (`Assoc [])
   | "tools/list" -> handle_tools_list req.id req.params
   | "tools/call" ->
     (match req.params with
