@@ -1,6 +1,14 @@
 (library
+ (name daw_mcp_resilience)
+ (public_name daw_mcp.resilience)
+ (wrapped false)
+ (modules mcp_resilience)
+ (libraries eio unix))
+
+(library
  (name daw_mcp)
  (public_name daw_mcp)
+ (modules :standard \ mcp_resilience)
  (libraries
   mcp_protocol
   eio

@@ -6,7 +6,7 @@
 *)
 
 open Daw_driver.Driver
-module Resilience = Mcp_protocol.Resilience
+module Resilience = Mcp_resilience
 
 (** Connection error types *)
 type connection_error = [
@@ -177,22 +177,30 @@ let with_driver t ~sw ~net ~clock ~op_name f =
           Error `Still_connecting
     in
     match res with
-    | Ok r -> Resilience.Ok r
-    | Error err -> Resilience.Error (match err with
-        | `Unknown_daw _ -> "Unknown DAW"
-        | `Not_running _ -> "DAW is not running"
-        | `Connection_failed msg -> "Connection failed: " ^ msg
-        | `No_daw_found -> "No DAW found"
-        | `Max_attempts -> "Max reconnection attempts reached"
-        | `Still_connecting -> "Still connecting..."
-        | `Command_failed msg -> "Command failed: " ^ msg)
+    | Ok r -> 
+        Printf.printf "%s: operation successful\n%!" op_name;
+        Result.Ok r
+    | Error err -> 
+        let err_str = match err with
+          | `Unknown_daw _ -> "Unknown DAW"
+          | `Not_running _ -> "DAW is not running"
+          | `Connection_failed msg -> "Connection failed: " ^ msg
+          | `No_daw_found -> "No DAW found"
+          | `Max_attempts -> "Max reconnection attempts reached"
+          | `Still_connecting -> "Still connecting..."
+          | `Command_failed msg -> "Command failed: " ^ msg
+        in
+        Printf.printf "%s: operation failed with %s\n%!" op_name err_str;
+        Result.Error err_str
   in
   let result = Resilience.with_retry_eio ~clock ~circuit_breaker:(Some t.breaker) ~op_name ~classify:(fun e -> Resilience.Fail e) op in
   match result with
-  | Ok r -> Ok r
-  | Error err -> Error (`Connection_failed err)
-  | CircuitOpen -> Error (`Connection_failed "Circuit breaker open")
-  | TimedOut -> Error (`Connection_failed "Operation timed out")
+  | `Ok r -> Ok r
+  | `Error err -> 
+      Printf.printf "%s: resilience error %s\n%!" op_name err;
+      Error (`Connection_failed err)
+  | `CircuitOpen -> Error (`Connection_failed "Circuit breaker open")
+  | `TimedOut -> Error (`Connection_failed "Operation timed out")
 
 (** Transport commands with error handling *)
 module Transport = struct

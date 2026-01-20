@@ -83,6 +83,9 @@ let registry : driver_entry list ref = ref []
 let register entry =
   registry := entry :: !registry
 
+let clear_registry () =
+  registry := []
+
 let get_all () = !registry
 
 let find_by_id daw_id =

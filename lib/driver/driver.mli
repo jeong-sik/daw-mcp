@@ -158,6 +158,7 @@ type driver_entry = {
 }
 
 val register : driver_entry -> unit
+val clear_registry : unit -> unit
 val get_all : unit -> driver_entry list
 val find_by_id : daw_id -> driver_entry option
 val auto_detect : unit -> (module DAW_DRIVER) option

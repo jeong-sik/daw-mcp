@@ -12,11 +12,12 @@ let test_initialize () =
   let open Yojson.Safe.Util in
 
   (* Check protocol version *)
-  let version = response |> member "result" |> member "protocolVersion" |> to_string in
-  Alcotest.(check string) "protocol version" "2024-11-05" version;
+  let result = response |> member "result" in
+  let version = result |> member "protocolVersion" |> to_string in
+  Alcotest.(check string) "protocol version" "2025-11-25" version;
 
   (* Check server info *)
-  let name = response |> member "result" |> member "serverInfo" |> member "name" |> to_string in
+  let name = result |> member "serverInfo" |> member "name" |> to_string in
   Alcotest.(check string) "server name" "daw-mcp" name
 
 (** Test tools/list *)
