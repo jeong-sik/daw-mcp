@@ -38,11 +38,12 @@ let run_stdio () =
 
   Eio_main.run @@ fun env ->
   let net = Eio.Stdenv.net env in
+  let clock = Eio.Stdenv.clock env in
   let stdin_flow = Eio.Stdenv.stdin env in
   let stdout_flow = Eio.Stdenv.stdout env in
 
   Eio.Switch.run @@ fun sw ->
-  let ctx = Daw_mcp.Mcp_server.create_context ~sw ~net in
+  let ctx = Daw_mcp.Mcp_server.create_context ~sw ~net ~clock in
   let buf = Eio.Buf_read.of_flow ~max_size:1_000_000 stdin_flow in
 
   (* Simple line-by-line processing *)
@@ -146,7 +147,7 @@ let run_http port =
   (try
   Eio.Switch.run @@ fun sw ->
   switch_ref := Some sw;
-  let ctx = Daw_mcp.Mcp_server.create_context ~sw ~net in
+  let ctx = Daw_mcp.Mcp_server.create_context ~sw ~net ~clock in
   let addr = `Tcp (Eio.Net.Ipaddr.V4.loopback, port) in
   let socket = Eio.Net.listen ~sw ~backlog:128 ~reuse_addr:true net addr in
 
@@ -283,6 +284,7 @@ let run_socket socket_path =
 
   Eio_main.run @@ fun env ->
   let net = Eio.Stdenv.net env in
+  let clock = Eio.Stdenv.clock env in
 
   (* Graceful shutdown setup *)
   let switch_ref = ref None in
@@ -302,7 +304,7 @@ let run_socket socket_path =
   (try
   Eio.Switch.run @@ fun sw ->
   switch_ref := Some sw;
-  let ctx = Daw_mcp.Mcp_server.create_context ~sw ~net in
+  let ctx = Daw_mcp.Mcp_server.create_context ~sw ~net ~clock in
   let addr = `Unix socket_path in
   let socket = Eio.Net.listen ~sw ~backlog:16 ~reuse_addr:true net addr in
 

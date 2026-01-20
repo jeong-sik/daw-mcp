@@ -62,51 +62,51 @@ val is_connected : t -> bool
 (** Get connection status as JSON-friendly record *)
 val get_status : t -> string * string option * string option
 
-(** Execute command with auto-reconnect *)
-val with_driver : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
-  ((module Daw_driver.Driver.DAW_DRIVER) -> ('a, connection_error) result) ->
+(** Execute command with auto-reconnect and resilience *)
+val with_driver : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
+  op_name:string -> ((module Daw_driver.Driver.DAW_DRIVER) -> ('a, connection_error) result) ->
   ('a, connection_error) result
 
 (** Transport commands with error handling *)
 module Transport : sig
-  val play : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val play : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     ([ `Playing ], connection_error) result
-  val stop : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val stop : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     ([ `Stopped ], connection_error) result
-  val record : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val record : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     ([ `Recording ], connection_error) result
-  val get_state : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val get_state : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     (Daw_driver.Driver.transport_state, connection_error) result
 end
 
 (** Tempo commands *)
 module Tempo : sig
-  val get : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val get : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     (float, connection_error) result
-  val set : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> float ->
+  val set : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock -> float ->
     (float, connection_error) result
 end
 
 (** Track commands *)
 module Tracks : sig
-  val get_all : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val get_all : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     (Daw_driver.Driver.track list, connection_error) result
-  val select : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> int ->
+  val select : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock -> int ->
     (int, connection_error) result
-  val get_selected : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val get_selected : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     (int, connection_error) result
 end
 
 (** Mixer commands *)
 module Mixer : sig
-  val set_volume : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val set_volume : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     track_index:int -> float -> (unit, connection_error) result
-  val set_pan : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val set_pan : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     track_index:int -> float -> (unit, connection_error) result
-  val set_mute : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val set_mute : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     track_index:int -> bool -> (unit, connection_error) result
-  val set_solo : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val set_solo : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     track_index:int -> bool -> (unit, connection_error) result
-  val get_channel : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t ->
+  val get_channel : t -> sw:Eio.Switch.t -> net:_ Eio.Net.t -> clock:_ Eio.Time.clock ->
     track_index:int -> (Daw_driver.Driver.mixer_channel, connection_error) result
 end

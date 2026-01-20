@@ -2,6 +2,7 @@
  (name daw_mcp)
  (public_name daw_mcp)
  (libraries
+  mcp_protocol
   eio
   yojson
   logs
