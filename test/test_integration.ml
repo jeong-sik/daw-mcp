@@ -44,7 +44,8 @@ let test_create_context () =
   Eio_main.run @@ fun env ->
   Eio.Switch.run @@ fun sw ->
   let net = Eio.Stdenv.net env in
-  let ctx = Mcp_server.create_context ~sw ~net in
+  let clock = Eio.Stdenv.clock env in
+  let ctx = Mcp_server.create_context ~sw ~net ~clock in
   (* Just check the context was created - more detailed tests would require a running DAW *)
   let integration = ctx.Mcp_server.integration in
   Alcotest.(check bool) "not connected initially" false (Daw_integration.is_connected integration)
@@ -54,7 +55,8 @@ let test_process_daw_status () =
   Eio_main.run @@ fun env ->
   Eio.Switch.run @@ fun sw ->
   let net = Eio.Stdenv.net env in
-  let ctx = Mcp_server.create_context ~sw ~net in
+  let clock = Eio.Stdenv.clock env in
+  let ctx = Mcp_server.create_context ~sw ~net ~clock in
   let request = {|{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"daw_status","arguments":{}}}|} in
   let response = Mcp_server.process_json_with_context ~ctx request in
   let open Yojson.Safe.Util in
@@ -73,7 +75,8 @@ let test_process_tools_list_with_context () =
   Eio_main.run @@ fun env ->
   Eio.Switch.run @@ fun sw ->
   let net = Eio.Stdenv.net env in
-  let ctx = Mcp_server.create_context ~sw ~net in
+  let clock = Eio.Stdenv.clock env in
+  let ctx = Mcp_server.create_context ~sw ~net ~clock in
   let request = {|{"jsonrpc":"2.0","id":1,"method":"tools/list"}|} in
   let response = Mcp_server.process_json_with_context ~ctx request in
   let open Yojson.Safe.Util in
@@ -87,7 +90,8 @@ let test_connection_error_handling () =
   Eio_main.run @@ fun env ->
   Eio.Switch.run @@ fun sw ->
   let net = Eio.Stdenv.net env in
-  let ctx = Mcp_server.create_context ~sw ~net in
+  let clock = Eio.Stdenv.clock env in
+  let ctx = Mcp_server.create_context ~sw ~net ~clock in
   (* Try to play without connecting - should return error *)
   let request = {|{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"daw_transport","arguments":{"action":"play"}}}|} in
   let response = Mcp_server.process_json_with_context ~ctx request in
