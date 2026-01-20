@@ -6,7 +6,6 @@
 *)
 
 open Daw_driver.Driver
-module Resilience = Mcp_protocol.Resilience
 
 (** Connection error types *)
 type connection_error = [
@@ -32,7 +31,7 @@ type t = {
   mutable last_daw_id : daw_id option;
   mutable reconnect_attempts : int;
   max_reconnect_attempts : int;
-  breaker : Resilience.circuit_breaker;
+  breaker : Mcp_resilience.circuit_breaker;
 }
 
 (** Create new integration manager *)
@@ -41,8 +40,18 @@ let create () = {
   last_daw_id = None;
   reconnect_attempts = 0;
   max_reconnect_attempts = 3;
-  breaker = Resilience.create_circuit_breaker ~name:"daw_driver" ~failure_threshold:5 ();
+  breaker = Mcp_resilience.create_circuit_breaker ~name:"daw_driver" ~failure_threshold:5 ();
 }
+
+(** Reset circuit breaker state after successful connection *)
+let reset_circuit_breaker cb =
+  Eio.Mutex.use_rw ~protect:true cb.Mcp_resilience.mutex (fun () ->
+    cb.Mcp_resilience.state <- Mcp_resilience.Closed;
+    cb.Mcp_resilience.failure_count <- 0;
+    cb.Mcp_resilience.success_count <- 0;
+    cb.Mcp_resilience.last_failure_time <- 0.0;
+    cb.Mcp_resilience.probe_in_progress <- false
+  )
 
 (** Register all available drivers *)
 let register_all_drivers () =
@@ -85,7 +94,7 @@ let connect_to_daw t ~sw ~net daw_id =
       t.state <- Connected driver;
       t.last_daw_id <- Some daw_id;
       t.reconnect_attempts <- 0;
-      Resilience.reset_circuit_breaker t.breaker;
+      reset_circuit_breaker t.breaker;
       Logs.info (fun m -> m "Connected to %s" (daw_name daw_id));
       Ok driver
     | Ok false ->
@@ -177,8 +186,8 @@ let with_driver t ~sw ~net ~clock ~op_name f =
           Error `Still_connecting
     in
     match res with
-    | Ok r -> Resilience.Ok r
-    | Error err -> Resilience.Error (match err with
+    | Ok r -> Mcp_resilience.Ok r
+    | Error err -> Mcp_resilience.Error (match err with
         | `Unknown_daw _ -> "Unknown DAW"
         | `Not_running _ -> "DAW is not running"
         | `Connection_failed msg -> "Connection failed: " ^ msg
@@ -187,7 +196,7 @@ let with_driver t ~sw ~net ~clock ~op_name f =
         | `Still_connecting -> "Still connecting..."
         | `Command_failed msg -> "Command failed: " ^ msg)
   in
-  let result = Resilience.with_retry_eio ~clock ~circuit_breaker:(Some t.breaker) ~op_name ~classify:(fun e -> Resilience.Fail e) op in
+  let result = Mcp_resilience.with_retry_eio ~clock ~circuit_breaker:(Some t.breaker) ~op_name ~classify:(fun e -> Fail e) op in
   match result with
   | Ok r -> Ok r
   | Error err -> Error (`Connection_failed err)

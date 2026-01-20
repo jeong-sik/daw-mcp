@@ -13,7 +13,7 @@ let test_initialize () =
 
   (* Check protocol version *)
   let version = response |> member "result" |> member "protocolVersion" |> to_string in
-  Alcotest.(check string) "protocol version" "2024-11-05" version;
+  Alcotest.(check string) "protocol version" "2025-11-25" version;
 
   (* Check server info *)
   let name = response |> member "result" |> member "serverInfo" |> member "name" |> to_string in
