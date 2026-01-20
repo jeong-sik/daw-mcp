@@ -640,7 +640,7 @@ let handle_resources_templates_list req_id _params =
   ])
 
 (** Handle tools/call request with Integration layer *)
-let handle_tools_call ~req_id ~integration ~sw ~net params =
+let handle_tools_call ~req_id ~integration ~sw ~net ~clock params =
   let open Yojson.Safe.Util in
   let name = params |> member "name" |> to_string in
   let args = params |> member "arguments" in
@@ -697,15 +697,15 @@ let handle_tools_call ~req_id ~integration ~sw ~net params =
     let action = args |> member "action" |> to_string in
     let result = match action with
       | "play" ->
-        (match Daw_integration.Transport.play integration ~sw ~net with
+        (match Daw_integration.Transport.play integration ~sw ~net ~clock with
          | Ok `Playing -> `Assoc [("action", `String "play"); ("success", `Bool true)]
          | Error err -> `Assoc [("action", `String "play"); ("success", `Bool false); ("error", `String (error_to_string err))])
       | "stop" ->
-        (match Daw_integration.Transport.stop integration ~sw ~net with
+        (match Daw_integration.Transport.stop integration ~sw ~net ~clock with
          | Ok `Stopped -> `Assoc [("action", `String "stop"); ("success", `Bool true)]
          | Error err -> `Assoc [("action", `String "stop"); ("success", `Bool false); ("error", `String (error_to_string err))])
       | "record" ->
-        (match Daw_integration.Transport.record integration ~sw ~net with
+        (match Daw_integration.Transport.record integration ~sw ~net ~clock with
          | Ok `Recording -> `Assoc [("action", `String "record"); ("success", `Bool true)]
          | Error err -> `Assoc [("action", `String "record"); ("success", `Bool false); ("error", `String (error_to_string err))])
       | _ ->
@@ -717,13 +717,13 @@ let handle_tools_call ~req_id ~integration ~sw ~net params =
     let bpm = args |> member "bpm" |> to_float_option in
     let result = match bpm with
       | Some v ->
-        (match Daw_integration.Tempo.set integration ~sw ~net v with
+        (match Daw_integration.Tempo.set integration ~sw ~net ~clock v with
          | Ok new_bpm ->
            `Assoc [("action", `String "set"); ("bpm", `Float new_bpm); ("success", `Bool true)]
          | Error err ->
            `Assoc [("action", `String "set"); ("bpm", `Float v); ("success", `Bool false); ("error", `String (error_to_string err))])
       | None ->
-        (match Daw_integration.Tempo.get integration ~sw ~net with
+        (match Daw_integration.Tempo.get integration ~sw ~net ~clock with
          | Ok current_bpm ->
            `Assoc [("action", `String "get"); ("bpm", `Float current_bpm); ("success", `Bool true)]
          | Error err ->
@@ -735,7 +735,7 @@ let handle_tools_call ~req_id ~integration ~sw ~net params =
     let index = args |> member "index" |> to_int_option in
     let result = match index with
       | Some idx ->
-        (match Daw_integration.Tracks.select integration ~sw ~net idx with
+        (match Daw_integration.Tracks.select integration ~sw ~net ~clock idx with
          | Ok selected_idx ->
            `Assoc [("index", `Int selected_idx); ("success", `Bool true)]
          | Error err ->
@@ -756,28 +756,28 @@ let handle_tools_call ~req_id ~integration ~sw ~net params =
     let results = [] in
     let results = match volume with
       | Some v ->
-        (match Daw_integration.Mixer.set_volume integration ~sw ~net ~track_index v with
+        (match Daw_integration.Mixer.set_volume integration ~sw ~net ~clock ~track_index v with
          | Ok () -> ("volume", `Assoc [("set", `Float v); ("success", `Bool true)]) :: results
          | Error err -> ("volume", `Assoc [("set", `Float v); ("success", `Bool false); ("error", `String (error_to_string err))]) :: results)
       | None -> results
     in
     let results = match pan with
       | Some v ->
-        (match Daw_integration.Mixer.set_pan integration ~sw ~net ~track_index v with
+        (match Daw_integration.Mixer.set_pan integration ~sw ~net ~clock ~track_index v with
          | Ok () -> ("pan", `Assoc [("set", `Float v); ("success", `Bool true)]) :: results
          | Error err -> ("pan", `Assoc [("set", `Float v); ("success", `Bool false); ("error", `String (error_to_string err))]) :: results)
       | None -> results
     in
     let results = match mute with
       | Some v ->
-        (match Daw_integration.Mixer.set_mute integration ~sw ~net ~track_index v with
+        (match Daw_integration.Mixer.set_mute integration ~sw ~net ~clock ~track_index v with
          | Ok () -> ("mute", `Assoc [("set", `Bool v); ("success", `Bool true)]) :: results
          | Error err -> ("mute", `Assoc [("set", `Bool v); ("success", `Bool false); ("error", `String (error_to_string err))]) :: results)
       | None -> results
     in
     let results = match solo with
       | Some v ->
-        (match Daw_integration.Mixer.set_solo integration ~sw ~net ~track_index v with
+        (match Daw_integration.Mixer.set_solo integration ~sw ~net ~clock ~track_index v with
          | Ok () -> ("solo", `Assoc [("set", `Bool v); ("success", `Bool true)]) :: results
          | Error err -> ("solo", `Assoc [("set", `Bool v); ("success", `Bool false); ("error", `String (error_to_string err))]) :: results)
       | None -> results
@@ -786,7 +786,7 @@ let handle_tools_call ~req_id ~integration ~sw ~net params =
     make_tool_result req_id result
 
   | "daw_tracks" ->
-    let result = match Daw_integration.Tracks.get_all integration ~sw ~net with
+    let result = match Daw_integration.Tracks.get_all integration ~sw ~net ~clock with
       | Ok tracks ->
         let tracks_json = List.map (fun (t : Daw_driver.Driver.track) ->
           `Assoc [
@@ -1144,10 +1144,11 @@ let handle_tools_call ~req_id ~integration ~sw ~net params =
     make_error None (-32601) (Printf.sprintf "Unknown tool: %s" name)
 
 (** Server context for stateful operations *)
-type 'a server_context = {
+type ('a, 'b) server_context = {
   integration : Daw_integration.t;
   sw : Eio.Switch.t;
   net : 'a Eio.Net.t;
+  clock : 'b Eio.Time.clock;
 }
 
 (** Handle JSON-RPC request with context *)
@@ -1168,6 +1169,7 @@ let handle_request_with_context ~ctx req =
          ~integration:ctx.integration
          ~sw:ctx.sw
          ~net:ctx.net
+         ~clock:ctx.clock
          params
      | None -> make_error req.id (-32602) "Missing params")
   | "ping" -> make_response req.id (`Assoc [])
@@ -1184,13 +1186,14 @@ let process_json_with_context ~ctx json_str =
     make_error None (-32700) "Parse error"
 
 (** Create server context *)
-let create_context ~sw ~net =
+let create_context ~sw ~net ~clock =
   (* Register all drivers on startup *)
   Daw_integration.register_all_drivers ();
   {
     integration = Daw_integration.create ();
     sw;
     net;
+    clock;
   }
 
 (* Legacy stateless functions for backward compatibility *)

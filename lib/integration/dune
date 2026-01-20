@@ -2,6 +2,7 @@
  (name daw_integration)
  (public_name daw_mcp.integration)
  (libraries
+  mcp_protocol
   eio
   logs
   daw_driver

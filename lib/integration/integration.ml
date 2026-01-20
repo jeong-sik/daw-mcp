@@ -31,6 +31,7 @@ type t = {
   mutable last_daw_id : daw_id option;
   mutable reconnect_attempts : int;
   max_reconnect_attempts : int;
+  breaker : Resilience.circuit_breaker;
 }
 
 (** Create new integration manager *)
@@ -39,6 +40,7 @@ let create () = {
   last_daw_id = None;
   reconnect_attempts = 0;
   max_reconnect_attempts = 3;
+  breaker = Resilience.create_circuit_breaker ~name:"daw_driver" ~failure_threshold:5 ();
 }
 
 (** Register all available drivers *)
@@ -82,6 +84,7 @@ let connect_to_daw t ~sw ~net daw_id =
       t.state <- Connected driver;
       t.last_daw_id <- Some daw_id;
       t.reconnect_attempts <- 0;
+      Resilience.reset_circuit_breaker t.breaker;
       Logs.info (fun m -> m "Connected to %s" (daw_name daw_id));
       Ok driver
     | Ok false ->
@@ -157,47 +160,67 @@ let get_status t =
   in
   (state_str, daw_name, error_msg)
 
-(** Execute command with auto-reconnect *)
-let with_driver t ~sw ~net f =
-  match t.state with
-  | Connected driver -> f driver
-  | Disconnected | Failed _ ->
-    (* Try to reconnect *)
-    begin match try_reconnect t ~sw ~net with
-    | Ok driver -> f driver
-    | Error _ as err -> err
-    end
-  | Connecting ->
-    Error (`Still_connecting)
+(** Execute command with auto-reconnect and resilience *)
+let with_driver t ~sw ~net ~clock ~op_name f =
+  let op () =
+    let res = 
+      match t.state with
+      | Connected driver -> f driver
+      | Disconnected | Failed _ ->
+          (* Try to reconnect *)
+          begin match try_reconnect t ~sw ~net with
+          | Ok driver -> f driver
+          | Error err -> Error err
+          end
+      | Connecting ->
+          Error `Still_connecting
+    in
+    match res with
+    | Ok r -> Result.Ok r
+    | Error err -> Result.Error (match err with
+        | `Unknown_daw _ -> "Unknown DAW"
+        | `Not_running _ -> "DAW is not running"
+        | `Connection_failed msg -> "Connection failed: " ^ msg
+        | `No_daw_found -> "No DAW found"
+        | `Max_attempts -> "Max reconnection attempts reached"
+        | `Still_connecting -> "Still connecting..."
+        | `Command_failed msg -> "Command failed: " ^ msg)
+  in
+  let result = Resilience.with_retry_eio ~clock ~circuit_breaker:(Some t.breaker) ~op_name op in
+  match result with
+  | Success r -> Ok r
+  | CircuitOpen -> Error (`Connection_failed "Circuit breaker open")
+  | Exhausted { last_error; _ } -> Error (`Connection_failed last_error)
+  | TimedOut _ -> Error (`Connection_failed "Operation timed out")
 
 (** Transport commands with error handling *)
 module Transport = struct
-  let play t ~sw ~net =
-    with_driver t ~sw ~net (fun driver ->
+  let play t ~sw ~net ~clock =
+    with_driver t ~sw ~net ~clock ~op_name:"transport_play" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.play ()) with
       | Ok () -> Ok `Playing
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let stop t ~sw ~net =
-    with_driver t ~sw ~net (fun driver ->
+  let stop t ~sw ~net ~clock =
+    with_driver t ~sw ~net ~clock ~op_name:"transport_stop" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.stop ()) with
       | Ok () -> Ok `Stopped
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let record t ~sw ~net =
-    with_driver t ~sw ~net (fun driver ->
+  let record t ~sw ~net ~clock =
+    with_driver t ~sw ~net ~clock ~op_name:"transport_record" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.record ()) with
       | Ok () -> Ok `Recording
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let get_state t ~sw ~net =
-    with_driver t ~sw ~net (fun driver ->
+  let get_state t ~sw ~net ~clock =
+    with_driver t ~sw ~net ~clock ~op_name:"transport_get_state" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.get_transport_state ()) with
       | Ok state -> Ok state
@@ -207,16 +230,16 @@ end
 
 (** Tempo commands *)
 module Tempo = struct
-  let get t ~sw ~net =
-    with_driver t ~sw ~net (fun driver ->
+  let get t ~sw ~net ~clock =
+    with_driver t ~sw ~net ~clock ~op_name:"tempo_get" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.get_tempo ()) with
       | Ok bpm -> Ok bpm
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let set t ~sw ~net bpm =
-    with_driver t ~sw ~net (fun driver ->
+  let set t ~sw ~net ~clock bpm =
+    with_driver t ~sw ~net ~clock ~op_name:"tempo_set" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.set_tempo bpm) with
       | Ok () -> Ok bpm
@@ -226,24 +249,24 @@ end
 
 (** Track commands *)
 module Tracks = struct
-  let get_all t ~sw ~net =
-    with_driver t ~sw ~net (fun driver ->
+  let get_all t ~sw ~net ~clock =
+    with_driver t ~sw ~net ~clock ~op_name:"tracks_get_all" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.get_tracks ()) with
       | Ok tracks -> Ok tracks
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let select t ~sw ~net index =
-    with_driver t ~sw ~net (fun driver ->
+  let select t ~sw ~net ~clock index =
+    with_driver t ~sw ~net ~clock ~op_name:"tracks_select" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.select_track index) with
       | Ok () -> Ok index
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let get_selected t ~sw ~net =
-    with_driver t ~sw ~net (fun driver ->
+  let get_selected t ~sw ~net ~clock =
+    with_driver t ~sw ~net ~clock ~op_name:"tracks_get_selected" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.get_selected_track ()) with
       | Ok index -> Ok index
@@ -253,40 +276,40 @@ end
 
 (** Mixer commands *)
 module Mixer = struct
-  let set_volume t ~sw ~net ~track_index value =
-    with_driver t ~sw ~net (fun driver ->
+  let set_volume t ~sw ~net ~clock ~track_index value =
+    with_driver t ~sw ~net ~clock ~op_name:"mixer_set_volume" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.set_volume ~track_index value) with
       | Ok () -> Ok ()
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let set_pan t ~sw ~net ~track_index value =
-    with_driver t ~sw ~net (fun driver ->
+  let set_pan t ~sw ~net ~clock ~track_index value =
+    with_driver t ~sw ~net ~clock ~op_name:"mixer_set_pan" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.set_pan ~track_index value) with
       | Ok () -> Ok ()
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let set_mute t ~sw ~net ~track_index enabled =
-    with_driver t ~sw ~net (fun driver ->
+  let set_mute t ~sw ~net ~clock ~track_index enabled =
+    with_driver t ~sw ~net ~clock ~op_name:"mixer_set_mute" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.set_mute ~track_index enabled) with
       | Ok () -> Ok ()
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let set_solo t ~sw ~net ~track_index enabled =
-    with_driver t ~sw ~net (fun driver ->
+  let set_solo t ~sw ~net ~clock ~track_index enabled =
+    with_driver t ~sw ~net ~clock ~op_name:"mixer_set_solo" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.set_solo ~track_index enabled) with
       | Ok () -> Ok ()
       | Error exn -> Error (`Command_failed (Printexc.to_string exn))
     )
 
-  let get_channel t ~sw ~net ~track_index =
-    with_driver t ~sw ~net (fun driver ->
+  let get_channel t ~sw ~net ~clock ~track_index =
+    with_driver t ~sw ~net ~clock ~op_name:"mixer_get_channel" (fun driver ->
       let module D = (val driver : DAW_DRIVER) in
       match Eio.Promise.await (D.get_mixer_channel ~track_index) with
       | Ok channel -> Ok channel
