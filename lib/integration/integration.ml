@@ -6,6 +6,7 @@
 *)
 
 open Daw_driver.Driver
+module Resilience = Mcp_protocol.Resilience
 
 (** Connection error types *)
 type connection_error = [
@@ -176,8 +177,8 @@ let with_driver t ~sw ~net ~clock ~op_name f =
           Error `Still_connecting
     in
     match res with
-    | Ok r -> Result.Ok r
-    | Error err -> Result.Error (match err with
+    | Ok r -> Resilience.Ok r
+    | Error err -> Resilience.Error (match err with
         | `Unknown_daw _ -> "Unknown DAW"
         | `Not_running _ -> "DAW is not running"
         | `Connection_failed msg -> "Connection failed: " ^ msg
@@ -186,12 +187,12 @@ let with_driver t ~sw ~net ~clock ~op_name f =
         | `Still_connecting -> "Still connecting..."
         | `Command_failed msg -> "Command failed: " ^ msg)
   in
-  let result = Resilience.with_retry_eio ~clock ~circuit_breaker:(Some t.breaker) ~op_name op in
+  let result = Resilience.with_retry_eio ~clock ~circuit_breaker:(Some t.breaker) ~op_name ~classify:(fun e -> Resilience.Fail e) op in
   match result with
-  | Success r -> Ok r
+  | Ok r -> Ok r
+  | Error err -> Error (`Connection_failed err)
   | CircuitOpen -> Error (`Connection_failed "Circuit breaker open")
-  | Exhausted { last_error; _ } -> Error (`Connection_failed last_error)
-  | TimedOut _ -> Error (`Connection_failed "Operation timed out")
+  | TimedOut -> Error (`Connection_failed "Operation timed out")
 
 (** Transport commands with error handling *)
 module Transport = struct

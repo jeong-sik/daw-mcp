@@ -3,6 +3,7 @@
  (public_name daw-mcp)
  (package daw_mcp)
  (libraries
+  mcp_protocol
   daw_mcp
   daw_mcp.osc
   daw_mcp.driver
