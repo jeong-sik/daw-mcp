@@ -166,6 +166,7 @@ let run_http port =
       (* Parse request line *)
       let first_line = Eio.Buf_read.line buf in
       let (http_method, path) = parse_request_line first_line in
+      Logs.info (fun m -> m "Request: %s %s" http_method path);
 
       (* Parse headers and extract Content-Length *)
       let content_length = ref 0 in
@@ -212,6 +213,15 @@ let run_http port =
         with _ ->
           unregister_sse_client client_id;
           Logs.info (fun m -> m "SSE client disconnected"))
+
+      | "GET", "/health" ->
+        let body = "OK" in
+        let headers = Printf.sprintf
+          "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: %d\r\n\r\n"
+          (String.length body)
+        in
+        Eio.Flow.copy_string headers flow;
+        Eio.Flow.copy_string body flow
 
       | "POST", "/mcp" | "POST", "/" ->
         (* JSON-RPC request *)
