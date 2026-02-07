@@ -11,60 +11,101 @@ type result = {
   error : string option;
 }
 
-(** Execute AppleScript code and return result *)
-let execute script =
-  (* Escape single quotes in the script *)
-  let escaped =
-    let buf = Buffer.create (String.length script * 2) in
-    String.iter (fun c ->
-      if c = '\'' then Buffer.add_string buf "'\\''"
-      else Buffer.add_char buf c
-    ) script;
-    Buffer.contents buf
-  in
-
-  (* Run osascript with the escaped script *)
-  let cmd = Printf.sprintf "osascript -e '%s' 2>&1" escaped in
-  let ic = Unix.open_process_in cmd in
-
-  (* Read all output *)
+let read_all_lines ic =
   let buf = Buffer.create 256 in
   (try
-    while true do
-      Buffer.add_string buf (input_line ic);
-      Buffer.add_char buf '\n'
-    done
-  with End_of_file -> ());
+     while true do
+       Buffer.add_string buf (input_line ic);
+       Buffer.add_char buf '\n'
+     done
+   with End_of_file -> ());
+  Buffer.contents buf
 
-  let status = Unix.close_process_in ic in
-  let output = String.trim (Buffer.contents buf) in
+(** Execute osascript and return (stdout, stderr, status).
+    Raises on process creation errors. *)
+let run_osascript argv =
+  let env = Unix.environment () in
+  let stdout_ic, stdin_oc, stderr_ic =
+    Unix.open_process_args_full "osascript" argv env
+  in
+  let closed = ref false in
+  let close () =
+    if !closed then None
+    else (
+      closed := true;
+      Some (Unix.close_process_full (stdout_ic, stdin_oc, stderr_ic))
+    )
+  in
+  Fun.protect
+    ~finally:(fun () -> ignore (close ()))
+    (fun () ->
+      let stdout = read_all_lines stdout_ic in
+      let stderr = read_all_lines stderr_ic in
+      let status =
+        match close () with
+        | Some st -> st
+        | None -> assert false
+      in
+      (stdout, stderr, status))
 
-  match status with
-  | Unix.WEXITED 0 ->
-    { success = true; output; error = None }
-  | Unix.WEXITED code ->
-    { success = false; output = ""; error = Some (Printf.sprintf "Exit code %d: %s" code output) }
-  | Unix.WSIGNALED sig_num ->
-    { success = false; output = ""; error = Some (Printf.sprintf "Killed by signal %d" sig_num) }
-  | Unix.WSTOPPED _ ->
-    { success = false; output = ""; error = Some "Process stopped" }
+(** Execute AppleScript code and return result *)
+let execute script =
+  try
+    (* Run osascript without going through a shell. *)
+    let stdout, stderr, status =
+      run_osascript [| "osascript"; "-e"; script |]
+    in
+    let output =
+      String.trim
+        (stdout ^ if stdout <> "" && stderr <> "" then "\n" ^ stderr else stderr)
+    in
+
+    match status with
+    | Unix.WEXITED 0 ->
+        { success = true; output; error = None }
+    | Unix.WEXITED code ->
+        { success = false;
+          output = "";
+          error = Some (Printf.sprintf "Exit code %d: %s" code output)
+        }
+    | Unix.WSIGNALED sig_num ->
+        { success = false; output = ""; error = Some (Printf.sprintf "Killed by signal %d" sig_num) }
+    | Unix.WSTOPPED _ ->
+        { success = false; output = ""; error = Some "Process stopped" }
+  with
+  | Unix.Unix_error (err, fn, arg) ->
+      { success = false;
+        output = "";
+        error =
+          Some
+            (Printf.sprintf "%s: %s (%s)" fn (Unix.error_message err) arg)
+      }
+  | exn ->
+      { success = false; output = ""; error = Some (Printexc.to_string exn) }
 
 (** Execute AppleScript from file *)
 let execute_file path =
-  let cmd = Printf.sprintf "osascript '%s' 2>&1" path in
-  let ic = Unix.open_process_in cmd in
-  let buf = Buffer.create 256 in
-  (try
-    while true do
-      Buffer.add_string buf (input_line ic);
-      Buffer.add_char buf '\n'
-    done
-  with End_of_file -> ());
-  let status = Unix.close_process_in ic in
-  let output = String.trim (Buffer.contents buf) in
-  match status with
-  | Unix.WEXITED 0 -> { success = true; output; error = None }
-  | _ -> { success = false; output = ""; error = Some output }
+  try
+    let stdout, stderr, status =
+      run_osascript [| "osascript"; path |]
+    in
+    let output =
+      String.trim
+        (stdout ^ if stdout <> "" && stderr <> "" then "\n" ^ stderr else stderr)
+    in
+    match status with
+    | Unix.WEXITED 0 -> { success = true; output; error = None }
+    | _ -> { success = false; output = ""; error = Some output }
+  with
+  | Unix.Unix_error (err, fn, arg) ->
+      { success = false;
+        output = "";
+        error =
+          Some
+            (Printf.sprintf "%s: %s (%s)" fn (Unix.error_message err) arg)
+      }
+  | exn ->
+      { success = false; output = ""; error = Some (Printexc.to_string exn) }
 
 (** Check if an application is running *)
 let is_app_running app_name =

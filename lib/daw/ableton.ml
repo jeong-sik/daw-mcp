@@ -43,17 +43,18 @@ let default_port = 11000
 
 (** Detect Ableton Live running *)
 let detect_ableton () =
-  (* Check if Ableton Live process is running *)
-  let cmd = "pgrep -x 'Ableton Live' || pgrep -x 'Live'" in
-  let ic = Unix.open_process_in cmd in
-  let result = try
-    let _pid = input_line ic in
-    true
-  with End_of_file ->
-    false
+  let command_succeeds prog args =
+    let argv = Array.of_list (prog :: args) in
+    let ic = Unix.open_process_args_in prog argv in
+    (* Drain output; pgrep may output multiple pids. *)
+    (try while true do ignore (input_line ic) done with End_of_file -> ());
+    match Unix.close_process_in ic with
+    | Unix.WEXITED 0 -> true
+    | _ -> false
   in
-  ignore (Unix.close_process_in ic);
-  result
+  (* Check if Ableton Live process is running (no shell). *)
+  command_succeeds "pgrep" [ "-x"; "Ableton Live" ]
+  || command_succeeds "pgrep" [ "-x"; "Live" ]
 
 (** Send OSC message to Ableton *)
 let send_osc msg =

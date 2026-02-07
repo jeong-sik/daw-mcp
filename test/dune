@@ -35,3 +35,9 @@
  (libraries unix)
  (deps ../lib/daw/reaper.ml)
  (action (run %{exe:test_no_shell_reaper.exe} %{dep:../lib/daw/reaper.ml})))
+
+(test
+ (name test_no_shell_lib)
+ (libraries unix)
+ (deps (glob_files_rec ../lib/*.ml))
+ (action (run %{exe:test_no_shell_lib.exe} ../lib)))

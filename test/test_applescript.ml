@@ -58,41 +58,29 @@ let test_navigation_keys () =
 
 (** Integration test - only runs on macOS *)
 let test_is_app_running () =
-  (* Test with an app that should always exist on macOS *)
-  if Sys.os_type = "Unix" then begin
-    (* Finder is always running on macOS *)
-    let result = is_app_running "Finder" in
-    (* This may fail in CI without macOS - just test it doesn't crash *)
-    ignore result
-  end
+  (* Finder is always running on macOS; on non-macOS this should just not crash. *)
+  let result = is_app_running "Finder" in
+  ignore result
 
 (** Test execute with simple script *)
 let test_execute_simple () =
-  (* Only run on macOS *)
-  if Sys.os_type = "Unix" then begin
-    let result = execute "return 2 + 2" in
-    if result.success then
-      Alcotest.(check string) "2+2=4" "4" result.output
-    (* If osascript not available, just skip *)
-  end
+  let result = execute "return 2 + 2" in
+  if result.success then Alcotest.(check string) "2+2=4" "4" result.output
+  (* If osascript is unavailable (e.g., Linux CI), just ensure we didn't raise. *)
 
 (** Test execute with string escaping *)
 let test_execute_string () =
-  if Sys.os_type = "Unix" then begin
-    let result = execute {|return "hello world"|} in
-    if result.success then
-      Alcotest.(check string) "string return" "hello world" result.output
-  end
+  let result = execute {|return "hello world"|} in
+  if result.success then
+    Alcotest.(check string) "string return" "hello world" result.output
 
 (** Test quotes in script *)
 let test_quote_escaping () =
-  if Sys.os_type = "Unix" then begin
-    (* Script with single quotes that need escaping *)
-    let result = execute {|return "it's working"|} in
-    if result.success then
-      (* AppleScript returns string without outer quotes *)
-      Alcotest.(check string) "apostrophe" "it's working" result.output
-  end
+  (* Script with single quotes that need escaping *)
+  let result = execute {|return "it's working"|} in
+  if result.success then
+    (* AppleScript returns string without outer quotes *)
+    Alcotest.(check string) "apostrophe" "it's working" result.output
 
 (** All tests *)
 let () =
