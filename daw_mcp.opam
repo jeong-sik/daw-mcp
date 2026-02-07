@@ -13,6 +13,7 @@ bug-reports: "https://github.com/jeong-sik/me/issues"
 depends: [
   "ocaml" {>= "5.2"}
   "dune" {>= "3.16" & >= "3.16"}
+  "mcp_protocol"
   "eio" {>= "1.0"}
   "eio_main" {>= "1.0"}
   "cohttp-eio" {>= "6.0"}

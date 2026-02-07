@@ -20,13 +20,14 @@
  (synopsis "DAW MCP Server - Control all DAWs via AI")
  (description
   "Pure OCaml 5.x MCP server for controlling DAWs (Logic Pro, Cubase, Pro Tools, Ableton, FL Studio, Reaper, MainStage) via OSC, AppleScript, and Plugin Bridge")
- (depends
-  (ocaml (>= 5.2))
-  (dune (>= 3.16))
-  (eio (>= 1.0))
-  (eio_main (>= 1.0))
-  (cohttp-eio (>= 6.0))
-  (yojson (>= 2.0))
+  (depends
+   (ocaml (>= 5.2))
+   (dune (>= 3.16))
+   mcp_protocol
+   (eio (>= 1.0))
+   (eio_main (>= 1.0))
+   (cohttp-eio (>= 6.0))
+   (yojson (>= 2.0))
   (ppx_deriving_yojson (>= 3.7))
   (cstruct (>= 6.0))
   (angstrom (>= 0.16))
