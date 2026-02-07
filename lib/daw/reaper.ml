@@ -35,7 +35,7 @@ let state = {
 (** Check if Reaper is running (macOS) *)
 let detect_reaper () =
   try
-    let ic = Unix.open_process_in "pgrep -x REAPER 2>/dev/null" in
+    let ic = Unix.open_process_args_in "pgrep" [| "pgrep"; "-x"; "REAPER" |] in
     let result = try Some (input_line ic) with End_of_file -> None in
     ignore (Unix.close_process_in ic);
     Option.is_some result
