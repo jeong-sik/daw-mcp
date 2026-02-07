@@ -29,3 +29,9 @@
 (test
  (name test_automation)
  (libraries daw_mcp.automation alcotest yojson))
+
+(test
+ (name test_no_shell_reaper)
+ (libraries unix)
+ (deps ../lib/daw/reaper.ml)
+ (action (run %{exe:test_no_shell_reaper.exe} %{dep:../lib/daw/reaper.ml})))
