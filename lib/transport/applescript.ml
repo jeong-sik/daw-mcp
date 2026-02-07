@@ -21,47 +21,91 @@ let read_all_lines ic =
    with End_of_file -> ());
   Buffer.contents buf
 
-(** Execute AppleScript code and return result *)
-let execute script =
-  (* Run osascript without going through a shell. *)
+(** Execute osascript and return (stdout, stderr, status).
+    Raises on process creation errors. *)
+let run_osascript argv =
   let env = Unix.environment () in
   let stdout_ic, stdin_oc, stderr_ic =
-    Unix.open_process_args_full "osascript" [| "osascript"; "-e"; script |] env
+    Unix.open_process_args_full "osascript" argv env
   in
-  let stdout = read_all_lines stdout_ic in
-  let stderr = read_all_lines stderr_ic in
-  let status = Unix.close_process_full (stdout_ic, stdin_oc, stderr_ic) in
-  let output =
-    String.trim
-      (stdout ^ if stdout <> "" && stderr <> "" then "\n" ^ stderr else stderr)
+  let closed = ref false in
+  let close () =
+    if !closed then None
+    else (
+      closed := true;
+      Some (Unix.close_process_full (stdout_ic, stdin_oc, stderr_ic))
+    )
   in
+  Fun.protect
+    ~finally:(fun () -> ignore (close ()))
+    (fun () ->
+      let stdout = read_all_lines stdout_ic in
+      let stderr = read_all_lines stderr_ic in
+      let status =
+        match close () with
+        | Some st -> st
+        | None -> assert false
+      in
+      (stdout, stderr, status))
 
-  match status with
-  | Unix.WEXITED 0 ->
-    { success = true; output; error = None }
-  | Unix.WEXITED code ->
-    { success = false; output = ""; error = Some (Printf.sprintf "Exit code %d: %s" code output) }
-  | Unix.WSIGNALED sig_num ->
-    { success = false; output = ""; error = Some (Printf.sprintf "Killed by signal %d" sig_num) }
-  | Unix.WSTOPPED _ ->
-    { success = false; output = ""; error = Some "Process stopped" }
+(** Execute AppleScript code and return result *)
+let execute script =
+  try
+    (* Run osascript without going through a shell. *)
+    let stdout, stderr, status =
+      run_osascript [| "osascript"; "-e"; script |]
+    in
+    let output =
+      String.trim
+        (stdout ^ if stdout <> "" && stderr <> "" then "\n" ^ stderr else stderr)
+    in
+
+    match status with
+    | Unix.WEXITED 0 ->
+        { success = true; output; error = None }
+    | Unix.WEXITED code ->
+        { success = false;
+          output = "";
+          error = Some (Printf.sprintf "Exit code %d: %s" code output)
+        }
+    | Unix.WSIGNALED sig_num ->
+        { success = false; output = ""; error = Some (Printf.sprintf "Killed by signal %d" sig_num) }
+    | Unix.WSTOPPED _ ->
+        { success = false; output = ""; error = Some "Process stopped" }
+  with
+  | Unix.Unix_error (err, fn, arg) ->
+      { success = false;
+        output = "";
+        error =
+          Some
+            (Printf.sprintf "%s: %s (%s)" fn (Unix.error_message err) arg)
+      }
+  | exn ->
+      { success = false; output = ""; error = Some (Printexc.to_string exn) }
 
 (** Execute AppleScript from file *)
 let execute_file path =
-  let env = Unix.environment () in
-  let stdout_ic, stdin_oc, stderr_ic =
-    Unix.open_process_args_full "osascript" [| "osascript"; path |] env
-  in
-  let stdout = read_all_lines stdout_ic in
-  let stderr = read_all_lines stderr_ic in
-  let status = Unix.close_process_full (stdout_ic, stdin_oc, stderr_ic) in
-  let output =
-    String.trim
-      (stdout ^ if stdout <> "" && stderr <> "" then "\n" ^ stderr else stderr)
-  in
-  match status with
-  | Unix.WEXITED 0 -> { success = true; output; error = None }
-  | _ -> { success = false; output = ""; error = Some output }
+  try
+    let stdout, stderr, status =
+      run_osascript [| "osascript"; path |]
+    in
+    let output =
+      String.trim
+        (stdout ^ if stdout <> "" && stderr <> "" then "\n" ^ stderr else stderr)
+    in
+    match status with
+    | Unix.WEXITED 0 -> { success = true; output; error = None }
+    | _ -> { success = false; output = ""; error = Some output }
+  with
+  | Unix.Unix_error (err, fn, arg) ->
+      { success = false;
+        output = "";
+        error =
+          Some
+            (Printf.sprintf "%s: %s (%s)" fn (Unix.error_message err) arg)
+      }
+  | exn ->
+      { success = false; output = ""; error = Some (Printexc.to_string exn) }
 
 (** Check if an application is running *)
 let is_app_running app_name =
