@@ -8,6 +8,7 @@
   daw_mcp.driver
   eio_main
   cmdliner
+  dune-build-info
   logs
   logs.fmt
   fmt.tty))

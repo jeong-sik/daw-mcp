@@ -6,6 +6,11 @@
 
 open Cmdliner
 
+let version =
+  match Build_info.V1.version () with
+  | None -> "dev"
+  | Some v -> Build_info.V1.Version.to_string v
+
 (** Setup logging *)
 let setup_logging level =
   Fmt_tty.setup_std_outputs ();
@@ -371,7 +376,7 @@ let main_cmd port socket verbose =
 
 let cmd =
   let doc = "DAW MCP Server - Control DAWs via AI" in
-  let info = Cmd.info "daw-mcp" ~version:"0.1.0" ~doc in
+  let info = Cmd.info "daw-mcp" ~version ~doc in
   Cmd.v info Term.(const main_cmd $ port_arg $ socket_arg $ verbose_arg)
 
 let () = exit (Cmd.eval cmd)

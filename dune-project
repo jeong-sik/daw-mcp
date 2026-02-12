@@ -2,6 +2,8 @@
 
 (name daw_mcp)
 
+(version 0.1.0)
+
 (generate_opam_files true)
 
 (source
@@ -34,6 +36,7 @@
   (logs (>= 0.7))
   (fmt (>= 0.9))
   (cmdliner (>= 1.2))
+  (dune-build-info (>= 0.1))
   (ppx_deriving (>= 5.2))
   (alcotest (>= 1.7)))
  (tags
