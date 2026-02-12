@@ -48,7 +48,7 @@ let ensure_frontmost () =
     Logs.warn (fun m -> m "Failed to activate Logic Pro: %s"
       (Option.value result.error ~default:"unknown error"));
   (* Small delay for app to come to front *)
-  Unix.sleepf 0.1;
+  Time_compat.sleep 0.1;
   result.success
 
 (** Send key to Logic Pro *)

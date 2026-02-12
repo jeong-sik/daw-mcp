@@ -48,7 +48,7 @@ let ensure_frontmost () =
   if not result.success then
     Logs.warn (fun m -> m "Failed to activate MainStage: %s"
       (Option.value result.error ~default:"unknown error"));
-  Unix.sleepf 0.1;
+  Time_compat.sleep 0.1;
   result.success
 
 (** Send key to MainStage *)

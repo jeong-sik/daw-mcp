@@ -44,6 +44,7 @@ let run_stdio () =
   Eio_main.run @@ fun env ->
   let net = Eio.Stdenv.net env in
   let clock = Eio.Stdenv.clock env in
+  Daw_drivers.Time_compat.set_clock clock;
   let stdin_flow = Eio.Stdenv.stdin env in
   let stdout_flow = Eio.Stdenv.stdout env in
 
@@ -125,6 +126,7 @@ let run_http port =
   Eio_main.run @@ fun env ->
   let net = Eio.Stdenv.net env in
   let clock = Eio.Stdenv.clock env in
+  Daw_drivers.Time_compat.set_clock clock;
 
   (* Graceful shutdown setup *)
   let switch_ref = ref None in
@@ -300,6 +302,7 @@ let run_socket socket_path =
   Eio_main.run @@ fun env ->
   let net = Eio.Stdenv.net env in
   let clock = Eio.Stdenv.clock env in
+  Daw_drivers.Time_compat.set_clock clock;
 
   (* Graceful shutdown setup *)
   let switch_ref = ref None in
