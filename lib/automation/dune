@@ -1,4 +1,5 @@
 (library
  (name automation)
  (public_name daw_mcp.automation)
- (libraries yojson))
+ (libraries yojson)
+ (instrumentation (backend bisect_ppx)))

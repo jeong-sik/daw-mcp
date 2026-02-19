@@ -13,4 +13,5 @@
   daw_mcp.automation
   daw_mcp.bridge)
  (preprocess
-  (pps ppx_deriving_yojson)))
+  (pps ppx_deriving_yojson))
+ (instrumentation (backend bisect_ppx)))
