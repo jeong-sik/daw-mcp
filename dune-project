@@ -38,6 +38,7 @@
   (cmdliner (>= 1.2))
   (dune-build-info (>= 0.1))
   (ppx_deriving (>= 5.2))
-  (alcotest (>= 1.7)))
+  (alcotest (>= 1.7))
+  (bisect_ppx (and :with-test (>= 2.8))))
  (tags
   (daw mcp osc audio "music production")))

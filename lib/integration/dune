@@ -5,4 +5,5 @@
   eio
   logs
   daw_driver
-  daw_mcp.drivers))
+  daw_mcp.drivers)
+ (instrumentation (backend bisect_ppx)))

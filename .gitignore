@@ -27,3 +27,6 @@ daw-mcp-linux-x64
 
 # Xcode build
 xcode/build/
+
+# Coverage
+_coverage/

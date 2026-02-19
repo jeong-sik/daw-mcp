@@ -1,4 +1,5 @@
 (library
  (name daw_bridge)
  (public_name daw_mcp.bridge)
- (libraries unix yojson))
+ (libraries unix yojson)
+ (instrumentation (backend bisect_ppx)))
