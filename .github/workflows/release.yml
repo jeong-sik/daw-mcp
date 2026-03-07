@@ -30,6 +30,10 @@ jobs:
         with:
           ocaml-compiler: 5.2.x
 
+      - name: Pin external dependencies
+        run: |
+          opam pin add mcp_protocol https://github.com/jeong-sik/mcp-protocol-sdk.git#main -n -y
+
       - name: Install dependencies
         run: opam install . --deps-only -y
 
