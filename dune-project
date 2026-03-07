@@ -27,6 +27,7 @@
   (dune (>= 3.16))
   (eio (>= 1.0))
   (eio_main (>= 1.0))
+  (mcp_protocol (>= 0.1.0))
   (cohttp-eio (>= 6.0))
   (yojson (>= 2.0))
   (ppx_deriving_yojson (>= 3.7))
