@@ -6,14 +6,18 @@
 
 open Types
 
+module Jsonrpc = Mcp_protocol.Jsonrpc
+module Mcp_version = Mcp_protocol.Version
+
 (** MCP protocol version *)
-let mcp_version = "2025-11-25"
+let mcp_version = Mcp_version.latest
 
 (** Server info *)
-let server_info = `Assoc [
-  ("name", `String "daw-mcp");
-  ("version", `String "0.1.0");
-]
+let server_info =
+  `Assoc [
+    ("name", `String "daw-mcp");
+    ("version", `String "0.1.0");
+  ]
 
 (** JSON-RPC request *)
 type jsonrpc_request = {
@@ -23,36 +27,45 @@ type jsonrpc_request = {
   params : Yojson.Safe.t option;
 }
 
+let sdk_id_of_json id =
+  match id with
+  | Some json ->
+      (match Jsonrpc.id_of_yojson json with
+       | Ok id -> id
+       | Error _ -> Jsonrpc.Null)
+  | None -> Jsonrpc.Null
+
 (** Parse JSON-RPC request *)
 let parse_request json =
-  let open Yojson.Safe.Util in
-  try
-    let jsonrpc = json |> member "jsonrpc" |> to_string in
-    let id = json |> member "id" |> fun v -> if v = `Null then None else Some v in
-    let method_ = json |> member "method" |> to_string in
-    let params = json |> member "params" |> fun v -> if v = `Null then None else Some v in
-    Ok { jsonrpc; id; method_; params }
-  with _ ->
-    Error "Invalid JSON-RPC request"
+  match Jsonrpc.message_of_yojson json with
+  | Ok (Jsonrpc.Request req) ->
+      Ok {
+        jsonrpc = req.jsonrpc;
+        id = Some (Jsonrpc.id_to_yojson req.id);
+        method_ = req.method_;
+        params = req.params;
+      }
+  | Ok (Jsonrpc.Notification notification) ->
+      Ok {
+        jsonrpc = notification.jsonrpc;
+        id = None;
+        method_ = notification.method_;
+        params = notification.params;
+      }
+  | Ok (Jsonrpc.Response _) | Ok (Jsonrpc.Error _) ->
+      Error "Expected JSON-RPC request or notification"
+  | Error _ ->
+      Error "Invalid JSON-RPC request"
 
 (** Create JSON-RPC response *)
 let make_response id result =
-  `Assoc [
-    ("jsonrpc", `String "2.0");
-    ("id", Option.value id ~default:`Null);
-    ("result", result);
-  ]
+  Jsonrpc.make_response ~id:(sdk_id_of_json id) ~result
+  |> Jsonrpc.message_to_yojson
 
 (** Create JSON-RPC error response *)
 let make_error id code message =
-  `Assoc [
-    ("jsonrpc", `String "2.0");
-    ("id", Option.value id ~default:`Null);
-    ("error", `Assoc [
-      ("code", `Int code);
-      ("message", `String message);
-    ]);
-  ]
+  Jsonrpc.make_error ~id:(sdk_id_of_json id) ~code ~message ()
+  |> Jsonrpc.message_to_yojson
 
 (** MCP Tool definition *)
 type tool = {
@@ -60,6 +73,16 @@ type tool = {
   description : string;
   input_schema : Yojson.Safe.t;
 }
+
+let tool_to_wire_json (tool : tool) =
+  let fields = [
+    ("name", `String tool.name);
+    ("inputSchema", tool.input_schema);
+  ] in
+  let fields =
+    ("description", `String tool.description) :: fields
+  in
+  `Assoc (List.rev fields)
 
 (** MCP Resource definition *)
 type resource = {
@@ -69,6 +92,19 @@ type resource = {
   mime_type : string;
   text : string;
 }
+
+let resource_to_wire_json (resource : resource) =
+  let fields = [
+    ("uri", `String resource.uri);
+    ("name", `String resource.name);
+  ] in
+  let fields =
+    ("description", `String resource.description) :: fields
+  in
+  let fields =
+    ("mimeType", `String resource.mime_type) :: fields
+  in
+  `Assoc (List.rev fields)
 
 (** Define all MCP tools *)
 let tools : tool list = [
@@ -484,13 +520,7 @@ let tools : tool list = [
 
 (** Convert tools to MCP format *)
 let tools_to_json () =
-  `List (List.map (fun (t : tool) ->
-    `Assoc [
-      ("name", `String t.name);
-      ("description", `String t.description);
-      ("inputSchema", t.input_schema);
-    ]
-  ) tools)
+  `List (List.map tool_to_wire_json tools)
 
 (** Define MCP resources *)
 let resources : resource list = [
@@ -552,14 +582,7 @@ All tools are currently implemented as code but mostly untested.
 
 (** Convert resources to MCP format *)
 let resources_to_json () =
-  `List (List.map (fun (r : resource) ->
-    `Assoc [
-      ("uri", `String r.uri);
-      ("name", `String r.name);
-      ("description", `String r.description);
-      ("mimeType", `String r.mime_type);
-    ]
-  ) resources)
+  `List (List.map resource_to_wire_json resources)
 
 (** Format connection error as string *)
 let error_to_string = function

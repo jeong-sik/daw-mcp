@@ -3,6 +3,7 @@
  (public_name daw_mcp)
  (libraries
   eio
+  mcp_protocol
   yojson
   logs
   fmt
