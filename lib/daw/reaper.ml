@@ -39,7 +39,7 @@ let detect_reaper () =
     let result = try Some (input_line ic) with End_of_file -> None in
     ignore (Unix.close_process_in ic);
     Option.is_some result
-  with Unix.Unix_error _ | End_of_file -> false
+  with Unix.Unix_error _ | Sys_error _ | End_of_file -> false
 
 (** Reaper OSC addresses *)
 module Addr = struct
