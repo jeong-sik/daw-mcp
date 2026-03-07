@@ -1,6 +1,6 @@
 (library
  (name sse)
  (public_name daw_mcp.sse)
- (libraries unix yojson eio daw_mcp.metering)
+ (libraries yojson eio daw_mcp.metering daw_mcp.drivers)
  (flags (:standard -w -69))
  (instrumentation (backend bisect_ppx)))

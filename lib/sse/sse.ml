@@ -104,7 +104,7 @@ let ping_event ~state =
   let id = next_event_id state in
   create_event
     ~event_type:Ping
-    ~data:(`Assoc [("timestamp", `Float (Unix.gettimeofday ()))])
+    ~data:(`Assoc [("timestamp", `Float (Daw_drivers.Time_compat.now ()))])
     ~id
     ()
 
@@ -115,7 +115,7 @@ let error_event ~state ~message =
     ~event_type:Error
     ~data:(`Assoc [
       ("message", `String message);
-      ("timestamp", `Float (Unix.gettimeofday ()));
+      ("timestamp", `Float (Daw_drivers.Time_compat.now ()));
     ])
     ~id
     ()
@@ -131,7 +131,7 @@ let sse_headers = [
 (** Start streaming (for integration with HTTP server) *)
 let start_stream state =
   state.running <- true;
-  state.last_frame_time <- Unix.gettimeofday ()
+  state.last_frame_time <- Daw_drivers.Time_compat.now ()
 
 (** Stop streaming *)
 let stop_stream state =
@@ -145,7 +145,7 @@ let get_config state = state.config
 
 (** Check if should emit frame based on frame rate *)
 let should_emit_frame state =
-  let now = Unix.gettimeofday () in
+  let now = Daw_drivers.Time_compat.now () in
   let interval = frame_interval state.config in
   if now -. state.last_frame_time >= interval then begin
     state.last_frame_time <- now;
@@ -155,7 +155,7 @@ let should_emit_frame state =
 
 (** Sleep until next frame *)
 let sleep_until_next_frame state =
-  let now = Unix.gettimeofday () in
+  let now = Daw_drivers.Time_compat.now () in
   let interval = frame_interval state.config in
   let elapsed = now -. state.last_frame_time in
   let remaining = interval -. elapsed in
@@ -231,7 +231,7 @@ let transport_event ~state ~playing ~recording ~position =
       ("playing", `Bool playing);
       ("recording", `Bool recording);
       ("position", `Float position);
-      ("timestamp", `Float (Unix.gettimeofday ()));
+      ("timestamp", `Float (Daw_drivers.Time_compat.now ()));
     ])
     ~id
     ()
@@ -245,7 +245,7 @@ let automation_event ~state ~track_index ~param_name ~points =
       ("track_index", `Int track_index);
       ("param_name", `String param_name);
       ("points", `List points);
-      ("timestamp", `Float (Unix.gettimeofday ()));
+      ("timestamp", `Float (Daw_drivers.Time_compat.now ()));
     ])
     ~id
     ()
