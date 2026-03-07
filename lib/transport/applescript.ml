@@ -219,7 +219,7 @@ end
 let click_menu app_name menu_path =
   let menu_items = String.split_on_char '/' menu_path in
   let menu_script = match menu_items with
-    | [] -> failwith "Empty menu path"
+    | [] -> invalid_arg "Applescript.click_menu: empty menu path"
     | [menu] -> Printf.sprintf {|click menu item "%s"|} menu
     | menu :: rest ->
       (* Build nested menu path: Menu/Submenu/Item *)

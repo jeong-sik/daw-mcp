@@ -247,7 +247,8 @@ let process t =
         (linear_to_db t.rms_l)
         (linear_to_db t.rms_r)
       in
-      ignore (send_message t msg)
+      if not (send_message t msg) then
+        Printf.eprintf "bridge: send failed: meter_update\n%!"
     end
   end
 
@@ -269,7 +270,8 @@ let set_param t param_id value =
         {|{"jsonrpc":"2.0","method":"param_changed","params":{"id":%d,"value":%.4f}}|}
         param_id clamped
       in
-      ignore (send_message t msg)
+      if not (send_message t msg) then
+        Printf.eprintf "bridge: send failed: param_changed (id=%d)\n%!" param_id
     end
   | None -> ()
 
@@ -386,7 +388,8 @@ let start_render t settings =
         settings.normalize
         settings.output_path
       in
-      ignore (send_message t msg)
+      if not (send_message t msg) then
+        Printf.eprintf "bridge: send failed: render_start\n%!"
     end;
     true
 
@@ -397,7 +400,8 @@ let cancel_render t =
   | Rendering _ ->
     t.render_status <- Failed "Cancelled by user";
     if t.connected then
-      ignore (send_message t {|{"jsonrpc":"2.0","method":"render_cancel"}|})
+      if not (send_message t {|{"jsonrpc":"2.0","method":"render_cancel"}|}) then
+        Printf.eprintf "bridge: send failed: render_cancel\n%!"
   | _ -> ()
 
 (** {1 Transport Commands} *)
@@ -408,7 +412,8 @@ let send_transport_command t cmd =
       {|{"jsonrpc":"2.0","method":"transport","params":{"command":"%s"}}|}
       cmd
     in
-    ignore (send_message t msg)
+    if not (send_message t msg) then
+      Printf.eprintf "bridge: send failed: transport/%s\n%!" cmd
   end
 
 let play t = send_transport_command t "play"

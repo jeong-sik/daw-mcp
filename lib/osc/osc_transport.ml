@@ -22,7 +22,7 @@ let create ~sw ~net ~host ~port =
   let addrs = Eio.Net.getaddrinfo_datagram ~service:(string_of_int port) net host in
   let remote_addr = match addrs with
     | addr :: _ -> addr
-    | [] -> failwith ("Could not resolve host: " ^ host)
+    | [] -> invalid_arg ("Osc_transport.create: could not resolve host: " ^ host)
   in
   Client { socket; remote_addr; receive_handler = None }
 
