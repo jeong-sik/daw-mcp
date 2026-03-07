@@ -112,7 +112,7 @@ let broadcast_sse_shutdown reason =
   let msg = Printf.sprintf "event: notification\ndata: %s\n\n" data in
   Hashtbl.iter (fun _ client ->
     if client.connected then
-      try Eio.Flow.copy_string msg client.flow with _ -> ()
+      try Eio.Flow.copy_string msg client.flow with Eio.Io _ | End_of_file -> ()
   ) sse_clients
 
 (** Graceful shutdown exception *)
@@ -215,9 +215,9 @@ let run_http port =
         (try
           while true do
             Eio.Time.sleep clock 15.0;
-            send_sse_event flow ~event:"ping" ~data:(string_of_float (Unix.gettimeofday ()))
+            send_sse_event flow ~event:"ping" ~data:(string_of_float (Daw_drivers.Time_compat.now ()))
           done
-        with _ ->
+        with Eio.Io _ | End_of_file ->
           unregister_sse_client client_id;
           Logs.info (fun m -> m "SSE client disconnected"))
 

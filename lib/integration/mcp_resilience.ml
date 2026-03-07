@@ -81,7 +81,7 @@ let circuit_allows cb =
     match cb.state with
     | Closed -> true
     | Open ->
-        let now = Unix.gettimeofday () in
+        let now = Daw_drivers.Time_compat.now () in
         let elapsed_ms = (now -. cb.last_failure_time) *. 1000.0 in
         if elapsed_ms >= float_of_int cb.timeout_ms then begin
           cb.state <- HalfOpen;
@@ -118,7 +118,7 @@ let circuit_record_success cb =
 
 let circuit_record_failure cb =
   Eio.Mutex.use_rw ~protect:true cb.mutex (fun () ->
-    cb.last_failure_time <- Unix.gettimeofday ();
+    cb.last_failure_time <- Daw_drivers.Time_compat.now ();
     match cb.state with
     | Closed ->
         cb.failure_count <- cb.failure_count + 1;

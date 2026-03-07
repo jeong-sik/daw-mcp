@@ -1205,7 +1205,7 @@ let process_json_with_context ~ctx json_str =
     match parse_request json with
     | Ok req -> handle_request_with_context ~ctx req
     | Error msg -> make_error None (-32600) msg
-  with _ ->
+  with Yojson.Json_error _ | Failure _ ->
     make_error None (-32700) "Parse error"
 
 (** Create server context *)
@@ -1245,7 +1245,7 @@ let process_json json_str =
     match parse_request json with
     | Ok req -> handle_request req
     | Error msg -> make_error None (-32600) msg
-  with _ ->
+  with Yojson.Json_error _ | Failure _ ->
     make_error None (-32700) "Parse error"
 
 (** Process line from stdin (for stdio transport) *)
