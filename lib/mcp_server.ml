@@ -7,18 +7,17 @@
 open Types
 
 module Jsonrpc = Mcp_protocol.Jsonrpc
-module Mcp_types = Mcp_protocol.Mcp_types
-module Mcp_resources = Mcp_protocol.Resources
 module Mcp_version = Mcp_protocol.Version
 
 (** MCP protocol version *)
 let mcp_version = Mcp_version.latest
 
 (** Server info *)
-let server_info : Mcp_types.server_info = {
-  name = "daw-mcp";
-  version = "0.1.0";
-}
+let server_info =
+  `Assoc [
+    ("name", `String "daw-mcp");
+    ("version", `String "0.1.0");
+  ]
 
 (** JSON-RPC request *)
 type jsonrpc_request = {
@@ -75,21 +74,13 @@ type tool = {
   input_schema : Yojson.Safe.t;
 }
 
-let sdk_tool_of_tool (tool : tool) : Mcp_types.tool = {
-  name = tool.name;
-  description = Some tool.description;
-  input_schema = tool.input_schema;
-}
-
-let tool_to_wire_json (tool : Mcp_types.tool) =
+let tool_to_wire_json (tool : tool) =
   let fields = [
     ("name", `String tool.name);
     ("inputSchema", tool.input_schema);
   ] in
   let fields =
-    match tool.description with
-    | Some description -> ("description", `String description) :: fields
-    | None -> fields
+    ("description", `String tool.description) :: fields
   in
   `Assoc (List.rev fields)
 
@@ -102,80 +93,16 @@ type resource = {
   text : string;
 }
 
-let sdk_resource_of_resource (resource : resource) : Mcp_types.resource = {
-  uri = resource.uri;
-  name = resource.name;
-  description = Some resource.description;
-  mime_type = Some resource.mime_type;
-}
-
-let resource_to_wire_json (resource : Mcp_types.resource) =
+let resource_to_wire_json (resource : resource) =
   let fields = [
     ("uri", `String resource.uri);
     ("name", `String resource.name);
   ] in
   let fields =
-    match resource.description with
-    | Some description -> ("description", `String description) :: fields
-    | None -> fields
+    ("description", `String resource.description) :: fields
   in
   let fields =
-    match resource.mime_type with
-    | Some mime_type -> ("mimeType", `String mime_type) :: fields
-    | None -> fields
-  in
-  `Assoc (List.rev fields)
-
-let sdk_resource_content_of_resource (resource : resource) : Mcp_resources.content = {
-  uri = resource.uri;
-  mime_type = resource.mime_type;
-  text = resource.text;
-}
-
-let tool_result_to_wire_json (tool_result : Mcp_types.tool_result) =
-  let content_item_to_json = function
-    | Mcp_types.TextContent { type_; text } ->
-        `Assoc [
-          ("type", `String type_);
-          ("text", `String text);
-        ]
-    | Mcp_types.ImageContent { type_; data; mime_type } ->
-        `Assoc [
-          ("type", `String type_);
-          ("data", `String data);
-          ("mimeType", `String mime_type);
-        ]
-    | Mcp_types.ResourceContent { type_; resource } ->
-        let resource_fields = [
-          ("uri", `String resource.uri);
-        ] in
-        let resource_fields =
-          match resource.text with
-          | Some text -> ("text", `String text) :: resource_fields
-          | None -> resource_fields
-        in
-        let resource_fields =
-          match resource.blob with
-          | Some blob -> ("blob", `String blob) :: resource_fields
-          | None -> resource_fields
-        in
-        let resource_fields =
-          match resource.mime_type with
-          | Some mime_type -> ("mimeType", `String mime_type) :: resource_fields
-          | None -> resource_fields
-        in
-        `Assoc [
-          ("type", `String type_);
-          ("resource", `Assoc (List.rev resource_fields));
-        ]
-  in
-  let fields = [
-    ("content", `List (List.map content_item_to_json tool_result.content));
-  ] in
-  let fields =
-    match tool_result.is_error with
-    | Some is_error -> ("isError", `Bool is_error) :: fields
-    | None -> fields
+    ("mimeType", `String resource.mime_type) :: fields
   in
   `Assoc (List.rev fields)
 
@@ -593,7 +520,7 @@ let tools : tool list = [
 
 (** Convert tools to MCP format *)
 let tools_to_json () =
-  `List (List.map (fun tool -> tool_to_wire_json (sdk_tool_of_tool tool)) tools)
+  `List (List.map tool_to_wire_json tools)
 
 (** Define MCP resources *)
 let resources : resource list = [
@@ -655,7 +582,7 @@ All tools are currently implemented as code but mostly untested.
 
 (** Convert resources to MCP format *)
 let resources_to_json () =
-  `List (List.map (fun resource -> resource_to_wire_json (sdk_resource_of_resource resource)) resources)
+  `List (List.map resource_to_wire_json resources)
 
 (** Format connection error as string *)
 let error_to_string = function
@@ -669,33 +596,27 @@ let error_to_string = function
 
 (** Make tool result JSON *)
 let make_tool_result req_id result =
-  let tool_result : Mcp_types.tool_result = {
-    content = [
-      Mcp_types.TextContent {
-        type_ = "text";
-        text = Yojson.Safe.to_string result;
-      };
-    ];
-    is_error = None;
-  } in
-  make_response req_id (tool_result_to_wire_json tool_result)
+  make_response req_id (`Assoc [
+    ("content", `List [
+      `Assoc [
+        ("type", `String "text");
+        ("text", `String (Yojson.Safe.to_string result));
+      ]
+    ]);
+  ])
 
 (** Handle initialize request *)
 let handle_initialize req_id _params =
-  let capabilities : Mcp_types.server_capabilities = {
-    tools = Some (`Assoc []);
-    resources = Some (`Assoc [("listChanged", `Bool false)]);
-    prompts = None;
-    logging = None;
-    experimental = None;
-  } in
-  let result : Mcp_types.initialize_result = {
-    protocol_version = mcp_version;
-    capabilities;
-    server_info;
-    instructions = None;
-  } in
-  make_response req_id (Mcp_types.initialize_result_to_yojson result)
+  make_response req_id (`Assoc [
+    ("protocolVersion", `String mcp_version);
+    ("capabilities", `Assoc [
+      ("tools", `Assoc []);
+      ("resources", `Assoc [
+        ("listChanged", `Bool false);
+      ]);
+    ]);
+    ("serverInfo", server_info);
+  ])
 
 (** Handle tools/list request *)
 let handle_tools_list req_id _params =
@@ -722,8 +643,15 @@ let handle_resources_read req_id params =
   | Some uri_value ->
       (match List.find_opt (fun r -> String.equal r.uri uri_value) resources with
        | Some resource ->
-           make_response req_id
-             (Mcp_resources.read_result [sdk_resource_content_of_resource resource])
+           make_response req_id (`Assoc [
+             ("contents", `List [
+               `Assoc [
+                 ("uri", `String resource.uri);
+                 ("mimeType", `String resource.mime_type);
+                 ("text", `String resource.text);
+               ]
+             ]);
+           ])
        | None ->
            make_error req_id (-32602)
              (Printf.sprintf "Unknown resource: %s" uri_value))
